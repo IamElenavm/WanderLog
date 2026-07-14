@@ -1,0 +1,539 @@
+<html lang="es"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Croacia · Zagreb → Dubrovnik</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--card2:#334155;--text:#f1f5f9;--muted:#94a3b8;
+--line:#334155;--accent:#0ea5e9;--accent2:#0891b2;--danger:#ef4444;--radius:16px;
+--shadow:0 8px 30px rgba(0,0,0,.35)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+background:linear-gradient(180deg,#0b1220,#0f172a);color:var(--text);min-height:100vh;line-height:1.5}
+.wrap{max-width:940px;margin:0 auto;padding:14px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 0 8px;flex-wrap:wrap}
+.h-title h1{font-size:1.45rem;font-weight:800;letter-spacing:-.5px}
+.h-title p{color:var(--muted);font-size:.88rem;margin-top:2px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{background:var(--card2);color:var(--text);border:1px solid var(--line);padding:9px 13px;
+border-radius:11px;cursor:pointer;font-size:.85rem;display:inline-flex;align-items:center;gap:6px;transition:.15s;white-space:nowrap}
+.btn:hover{background:var(--accent);border-color:var(--accent)}
+.btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent}
+.btn.danger:hover{background:var(--danger);border-color:var(--danger)}
+.btn.small{padding:6px 10px;font-size:.78rem}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
+.chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 11px;
+font-size:.76rem;color:var(--muted);display:inline-flex;gap:5px;align-items:center}
+.chip b{color:var(--text);font-weight:600}
+/* toolbar */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 12px;
+background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:none;border:none;color:var(--muted);padding:7px 12px;cursor:pointer;font-size:.82rem}
+.seg button.active{background:var(--accent);color:#fff}
+.filters{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+.fchip{border:1px solid var(--line);background:var(--bg);color:var(--muted);border-radius:999px;
+padding:5px 10px;font-size:.76rem;cursor:pointer;display:inline-flex;gap:5px;align-items:center;transition:.15s}
+.fchip.on{color:#fff}
+/* day selector */
+.days{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:thin}
+.days::-webkit-scrollbar{height:6px}.days::-webkit-scrollbar-thumb{background:var(--card2);border-radius:3px}
+.day-btn{flex:0 0 auto;background:var(--card);border:1px solid var(--line);border-radius:14px;
+padding:9px 13px;cursor:pointer;text-align:center;min-width:86px;transition:.15s;color:var(--text);position:relative}
+.day-btn .dnum{font-size:.7rem;color:var(--muted)}
+.day-btn .demoji{font-size:1.25rem;margin:2px 0}
+.day-btn .dcity{font-size:.72rem;font-weight:600;white-space:nowrap}
+.day-btn .badge{position:absolute;top:-6px;right:-6px;background:var(--accent2);color:#fff;
+font-size:.62rem;padding:2px 6px;border-radius:999px;border:2px solid var(--bg)}
+.day-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;box-shadow:var(--shadow)}
+.day-btn.active .dnum,.day-btn.active .dcity{color:#fff}
+/* day head */
+.day-head{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;margin:4px 0 14px}
+.day-head h2{font-size:1.2rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.day-head .date{color:var(--muted);font-size:.8rem;margin:2px 0 8px}
+.day-head .summary{font-size:.9rem;color:#cbd5e1;margin-bottom:8px}
+.day-head .acc{font-size:.78rem;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.day-head .acc a{color:var(--accent);text-decoration:none}
+.day-head .headbtns{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+/* plans */
+.plans{position:relative}
+.view-timeline{padding-left:26px}
+.view-timeline::before{content:"";position:absolute;left:8px;top:6px;bottom:20px;width:2px;background:var(--line)}
+.plan{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;transition:.15s;position:relative}
+.view-timeline .plan::before{content:"";position:absolute;left:-22px;top:20px;width:12px;height:12px;
+border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+.plan.open{border-color:var(--accent)}
+.plan.done-plan{opacity:.62}
+.plan-head{display:flex;align-items:center;gap:11px;padding:13px 15px;cursor:pointer;user-select:none}
+.done-cb{width:18px;height:18px;flex:0 0 auto;cursor:pointer;accent-color:var(--accent)}
+.drag-handle{cursor:grab;color:var(--muted);font-size:1.1rem;padding:0 2px}
+.plan-time{flex:0 0 auto;text-align:center;min-width:52px}
+.plan-time .t{font-weight:800;font-size:.98rem}
+.plan-time .d{font-size:.66rem;color:var(--muted)}
+.plan-icon{flex:0 0 auto;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.15rem}
+.plan-main{flex:1 1 auto;min-width:0}
+.plan-main .title{font-weight:600;font-size:.96rem}
+.plan-main .title.done{text-decoration:line-through;color:var(--muted)}
+.plan-main .cat{font-size:.71rem;color:var(--muted);margin-top:1px}
+.plan-arrow{color:var(--muted);transition:.3s;font-size:1.05rem}
+.plan.open .plan-arrow{transform:rotate(180deg)}
+.plan-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.plan-body-inner{padding:0 15px 15px;border-top:1px solid var(--line)}
+.loc{font-size:.79rem;color:var(--accent);margin:11px 0 8px;display:flex;gap:6px}
+.desc{font-size:.88rem;color:#e2e8f0;margin-bottom:10px}
+.tips{background:#0b1626;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:.81rem;color:#cbd5e1;margin-bottom:11px;display:flex;gap:8px}
+.tips b{color:#fbbf24}
+.mini-label{display:block;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 5px}
+.note{width:100%;background:#0b1626;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:9px;font-size:.85rem;resize:vertical;min-height:52px;font-family:inherit}
+.links{display:flex;flex-direction:column;gap:5px}
+.linkrow{display:flex;align-items:center;gap:8px;background:#0b1626;border:1px solid var(--line);border-radius:8px;padding:6px 9px}
+.linkrow a{color:var(--accent);text-decoration:none;font-size:.83rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.linkrow button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem}
+.linkform{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.linkform input{flex:1;min-width:110px;background:#0b1626;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:7px 9px;font-size:.82rem}
+.map-box{border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-top:11px}
+.map-box iframe{width:100%;height:210px;border:0;display:block}
+.map-actions{margin-top:8px;display:flex;gap:14px;flex-wrap:wrap}
+.map-actions a{font-size:.81rem;color:var(--accent);text-decoration:none;display:inline-flex;gap:5px}
+.edit-inp{background:#0b1626;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:6px 8px;font-size:.85rem;font-family:inherit}
+.title-inp{width:100%}.time-inp{width:62px}.dur-inp{width:62px;margin-top:4px}
+.del-plan{margin-top:10px;background:none;border:1px solid var(--danger);color:var(--danger);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.8rem}
+.connector{text-align:center;font-size:.75rem;color:var(--muted);margin:-3px 0 7px;padding:2px}
+.connector a{color:var(--accent);text-decoration:none;margin-left:6px}
+.addplan{margin:4px 0 10px}
+.empty{color:var(--muted);text-align:center;padding:30px;font-size:.9rem}
+#dayMap{height:62vh;min-height:340px;border-radius:14px;border:1px solid var(--line)}
+/* pins */
+.pin{width:100%;height:100%;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.leaflet-popup-content{font-size:.82rem}
+/* info */
+details.info{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:12px 0;overflow:hidden}
+details.info>summary{padding:13px 15px;cursor:pointer;font-weight:600;list-style:none;display:flex;gap:8px;align-items:center}
+details.info>summary::-webkit-details-marker{display:none}
+details.info>summary::after{content:"+";margin-left:auto;color:var(--muted);font-size:1.2rem}
+details.info[open]>summary::after{content:"–"}
+.info-body{padding:0 15px 15px;font-size:.85rem;color:#cbd5e1}
+.info-body table{width:100%;border-collapse:collapse;margin-top:6px}
+.info-body td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
+.info-body td:first-child{font-weight:600;white-space:nowrap;color:var(--text)}
+.info-body ul{margin:6px 0 6px 18px}.info-body li{margin:4px 0}
+.vrow{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+.vrow:first-child{border-top:none}.vrow span{flex:1}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;padding:16px;z-index:1000;overflow:auto}
+.modal-bg.show{display:flex}
+.modal{background:#111c30;border:1px solid var(--line);border-radius:var(--radius);padding:20px;max-width:480px;width:100%;box-shadow:var(--shadow);margin:auto}
+.modal h3{margin-bottom:12px}
+.cfg-sec{border-top:1px solid var(--line);padding:14px 0}
+.cfg-sec:first-of-type{border-top:none;padding-top:0}
+.cfg-sec h4{font-size:.85rem;margin-bottom:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.variant-btns{display:flex;gap:8px;flex-wrap:wrap}
+.day-toggles{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow:auto}
+.day-toggles label{display:flex;gap:9px;align-items:center;font-size:.85rem;background:#0b1626;border:1px solid var(--line);border-radius:9px;padding:8px 10px;cursor:pointer}
+.day-toggles input{accent-color:var(--accent);width:16px;height:16px}
+input[type=date],#urlInput{background:#0b1626;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:9px;font-size:.85rem;width:100%}
+.url-row{display:flex;gap:8px;margin-top:8px}.url-row input{flex:1}
+.drop{border:2px dashed var(--line);border-radius:11px;padding:20px;text-align:center;cursor:pointer;transition:.15s;font-size:.85rem;color:var(--muted);display:block}
+.drop:hover,.drop.drag{border-color:var(--accent);color:var(--text);background:#0b1626}
+.drop .big{font-size:1.8rem;margin-bottom:4px}
+.status{font-size:.8rem;margin-top:10px;padding:8px 10px;border-radius:8px;display:none}
+.status.ok{display:block;background:#064e3b;color:#6ee7b7}
+.status.err{display:block;background:#7f1d1d;color:#fca5a5}
+.modal-foot{display:flex;gap:8px;margin-top:8px;justify-content:space-between;flex-wrap:wrap}
+/* trip map modal */
+#tripModal .modal{max-width:900px}
+#tripMap{height:65vh;min-height:380px;border-radius:12px;border:1px solid var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.legend .li{display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--muted)}
+.legend .dot{width:14px;height:14px;border-radius:50%;border:2px solid #fff}
+footer{text-align:center;color:var(--muted);font-size:.73rem;padding:22px 0 12px}
+@media(max-width:520px){.h-title h1{font-size:1.2rem}.plan-icon{width:32px;height:32px;font-size:1rem}.plan-time{min-width:44px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="h-title"><h1 id="tripTitle">Cargando…</h1><p id="tripSubtitle"></p></div>
+    <div class="actions">
+      <button class="btn" id="editBtn" onclick="toggleEdit()">✏️ <span>Editar</span></button>
+      <button class="btn" onclick="openTripMap()">🗺️ <span>Mapa viaje</span></button>
+      <button class="btn" onclick="openConfig()">⚙️ <span>Config</span></button>
+    </div>
+  </header>
+  <div class="meta" id="tripMeta"></div>
+  <div class="toolbar">
+    <div class="seg" id="viewSeg">
+      <button data-v="list" class="active" onclick="setView('list')">☰ Lista</button>
+      <button data-v="timeline" onclick="setView('timeline')">⏱️ Timeline</button>
+      <button data-v="map" onclick="setView('map')">📍 Mapa</button>
+    </div>
+    <button class="btn small" id="expandBtn" onclick="toggleExpandAll()">⇕ Expandir todo</button>
+    <div class="filters" id="filters"></div>
+  </div>
+  <div class="days" id="daySelector"></div>
+  <div id="dayContent"></div>
+  <div id="infoSections"></div>
+  <footer>Itinerario interactivo · Claude 4.8 Opus · Guardado automático en tu navegador</footer>
+</div>
+
+<!-- CONFIG MODAL -->
+<div class="modal-bg" id="configModal">
+ <div class="modal">
+  <h3>⚙️ Configuración</h3>
+  <div class="cfg-sec"><h4>📅 Fecha de inicio</h4><input type="date" id="startDate" onchange="changeStart(this.value)"></div>
+  <div class="cfg-sec"><h4>🔀 Aplicar variante</h4><div class="variant-btns" id="variantBtns"></div></div>
+  <div class="cfg-sec"><h4>🗓️ Días activos</h4><div class="day-toggles" id="dayToggles"></div></div>
+  <div class="cfg-sec"><h4>📂 Cargar itinerario</h4>
+    <label class="drop" id="dropZone"><div class="big">📄</div><div>Clic o arrastra tu <b>.json</b></div>
+      <input type="file" id="fileInput" accept=".json,application/json" hidden=""></label>
+    <div class="url-row"><input id="urlInput" placeholder="https://.../itinerario.json"><button class="btn" onclick="loadFromUrl()">Cargar URL</button></div>
+    <div class="status" id="status"></div></div>
+  <div class="cfg-sec"><h4>💾 Exportar</h4><div class="variant-btns">
+    <button class="btn" onclick="exportJSON()">⬇️ Exportar mi itinerario</button>
+    <button class="btn" onclick="downloadTemplate()">📄 Plantilla vacía</button></div></div>
+  <div class="modal-foot">
+    <button class="btn danger" onclick="resetDefault()">↺ Restaurar por defecto</button>
+    <button class="btn" onclick="closeConfig()">Cerrar</button></div>
+ </div>
+</div>
+
+<!-- TRIP MAP MODAL -->
+<div class="modal-bg" id="tripModal">
+ <div class="modal">
+  <h3>🗺️ Mapa del viaje</h3>
+  <div id="tripMap"></div>
+  <div class="legend" id="tripLegend"></div>
+  <div class="modal-foot"><span></span><button class="btn" onclick="closeTripMap()">Cerrar</button></div>
+ </div>
+</div>
+
+<script>
+/* ============ DATOS POR DEFECTO ============ */
+const DEFAULT_DATA={
+"trip":{"title":"Croacia: Zagreb → Dubrovnik","subtitle":"Cultura, senderismo, playa y buceo","startDate":"2026-09-26","endDate":"2026-10-03","durationDays":8,"route":"Zagreb → Plitvice → Zadar → Krka/Šibenik → Split → Makarska → Dubrovnik","totalDistanceKm":635,"transport":"Coche one-way"},
+"categories":{"transport":{"label":"Transporte","icon":"🚗","color":"#64748b"},"culture":{"label":"Cultura","icon":"🏛️","color":"#8b5cf6"},"hiking":{"label":"Senderismo","icon":"🥾","color":"#16a34a"},"beach":{"label":"Playa","icon":"🏖️","color":"#0ea5e9"},"diving":{"label":"Buceo","icon":"🤿","color":"#0891b2"},"food":{"label":"Gastronomía","icon":"🍽️","color":"#ea580c"},"nature":{"label":"Naturaleza","icon":"🌊","color":"#0d9488"},"viewpoint":{"label":"Mirador","icon":"🌄","color":"#d97706"}},
+"days":[
+{"dayNumber":1,"date":"2026-09-26","weekday":"Sábado","city":"Zagreb","title":"Zagreb","emoji":"🏙️","enabled":true,"summary":"Llegada y descubrimiento de la capital: Ciudad Alta medieval, museos originales y ambiente local.","accommodation":{"name":"Hotel Esplanade Zagreb (5★)","area":"Centro histórico","coordinates":{"lat":45.8047,"lng":15.9783},"googleMapsUrl":"https://www.google.com/maps?q=45.8047,15.9783"},"plans":[
+{"id":"d1-p1","time":"10:00","duration":"1h","title":"Llegada y recogida del coche","category":"transport","location":"Aeropuerto Franjo Tuđman (ZAG)","coordinates":{"lat":45.7429,"lng":16.0688},"googleMapsUrl":"https://www.google.com/maps?q=45.7429,16.0688","description":"Aterrizaje en Zagreb y recogida del coche de alquiler (reserva one-way ZAG → DBV). Deja el equipaje en el hotel.","tips":"Reserva con meses de antelación. Tarjeta de crédito para la fianza. Descarga mapas offline."},
+{"id":"d1-p2","time":"12:00","duration":"2h","title":"Gornji Grad (Ciudad Alta)","category":"culture","location":"Iglesia de San Marcos","coordinates":{"lat":45.8167,"lng":15.9736},"googleMapsUrl":"https://www.google.com/maps?q=45.8167,15.9736","description":"Iglesia de San Marcos con su tejado de mosaico, Parlamento, Torre Lotrščak (cañón del mediodía) y el funicular más corto de Europa.","tips":"Antes del mediodía verás el disparo del cañón desde la Torre Lotrščak."},
+{"id":"d1-p3","time":"14:00","duration":"1h","title":"Museo de las Relaciones Rotas","category":"culture","location":"Museum of Broken Relationships","coordinates":{"lat":45.8153,"lng":15.9730},"googleMapsUrl":"https://www.google.com/maps?q=45.8153,15.9730","description":"Uno de los museos más originales del mundo: objetos donados de relaciones terminadas, cada uno con su historia.","tips":"Tiene una cafetería encantadora para una pausa."},
+{"id":"d1-p4","time":"15:30","duration":"30min","title":"Catedral de Zagreb","category":"culture","location":"Catedral de la Asunción","coordinates":{"lat":45.8140,"lng":15.9794},"googleMapsUrl":"https://www.google.com/maps?q=45.8140,15.9794","description":"La estructura más alta de Croacia, con dos agujas neogóticas que dominan el skyline.","tips":"Comprueba el estado de restauración de las torres."},
+{"id":"d1-p5","time":"16:30","duration":"1h","title":"Plaza Ban Jelačić y Mercado Dolac","category":"culture","location":"Trg bana Jelačića","coordinates":{"lat":45.8131,"lng":15.9775},"googleMapsUrl":"https://www.google.com/maps?q=45.8131,15.9775","description":"Corazón de la ciudad y el colorido Mercado Dolac, el más famoso de Zagreb.","tips":"El Dolac cierra pronto (~15h); mejor por la mañana."},
+{"id":"d1-p6","time":"20:00","duration":"2h","title":"Cena en Calle Tkalčićeva","category":"food","location":"Tkalčićeva Ulica","coordinates":{"lat":45.8151,"lng":15.9755},"googleMapsUrl":"https://www.google.com/maps?q=45.8151,15.9755","description":"Calle peatonal con restaurantes y ambiente local auténtico. Prueba el rakija.","tips":"Animado y sin turismo masivo. Perfecta para la primera noche."}]},
+{"dayNumber":2,"date":"2026-09-27","weekday":"Domingo","city":"Plitvice","title":"P.N. Plitvice","emoji":"🌊","enabled":true,"summary":"16 lagos turquesa conectados por cascadas y pasarelas. Colores otoñales. Traslado a Zadar al atardecer.","accommodation":{"name":"Hotel Bastion (4★)","area":"Zadar - Casco Antiguo","coordinates":{"lat":44.1178,"lng":15.2225},"googleMapsUrl":"https://www.google.com/maps?q=44.1178,15.2225"},"plans":[
+{"id":"d2-p1","time":"07:30","duration":"2h","title":"Salida hacia Plitvice","category":"transport","location":"Ruta Zagreb → Plitvice","coordinates":{"lat":44.8654,"lng":15.5820},"googleMapsUrl":"https://www.google.com/maps?q=44.8654,15.5820","description":"~2h de conducción (130 km) hacia el interior. Sal temprano para aprovechar el día.","tips":"Lleva provisiones; dentro del parque la oferta es limitada."},
+{"id":"d2-p2","time":"09:30","duration":"5h","title":"Plitvice: Ruta H completa","category":"hiking","location":"P.N. Lagos de Plitvice","coordinates":{"lat":44.8811,"lng":15.6167},"googleMapsUrl":"https://www.google.com/maps?q=44.8811,15.6167","description":"La ruta más completa (8 km, 4-5h): zona Alta y Baja, cascadas, lago Kozjak en barco y pasarelas sobre agua turquesa. UNESCO.","tips":"COMPRA ENTRADAS ONLINE, se agotan. Alternativa corta: Ruta A+B (4h)."},
+{"id":"d2-p3","time":"16:00","duration":"1h45min","title":"Traslado a Zadar","category":"transport","location":"Ruta Plitvice → Zadar","coordinates":{"lat":44.1157,"lng":15.2247},"googleMapsUrl":"https://www.google.com/maps?q=44.1157,15.2247","description":"130 km de descenso hacia la costa dálmata. Llegada a Zadar para el atardecer.","tips":"El atardecer en el Órgano del Mar es imperdible."},
+{"id":"d2-p4","time":"18:30","duration":"1h30min","title":"Atardecer en el Órgano del Mar","category":"nature","location":"Morske Orgulje, Zadar","coordinates":{"lat":44.1194,"lng":15.2181},"googleMapsUrl":"https://www.google.com/maps?q=44.1194,15.2181","description":"Esculturas bajo el paseo que generan música con las olas. Hitchcock dijo que aquí está el mejor atardecer del mundo.","tips":"Siéntate en los escalones con una copa de vino local."}]},
+{"dayNumber":3,"date":"2026-09-28","weekday":"Lunes","city":"Zadar","title":"Zadar","emoji":"⛵","enabled":true,"summary":"Historia romana y medieval junto al mar, con opción de excursión al archipiélago de Kornati.","accommodation":{"name":"Zadar o avanzar a Šibenik","area":"Zadar - Casco Antiguo","coordinates":{"lat":44.1178,"lng":15.2225},"googleMapsUrl":"https://www.google.com/maps?q=44.1178,15.2225"},"plans":[
+{"id":"d3-p1","time":"09:00","duration":"1h30min","title":"Foro Romano e Iglesia de San Donato","category":"culture","location":"Foro Romano de Zadar","coordinates":{"lat":44.1160,"lng":15.2242},"googleMapsUrl":"https://www.google.com/maps?q=44.1160,15.2242","description":"2.000 años de historia. San Donato es una joya prerrománica única en Europa, con acústica excepcional.","tips":"Sube al campanario cercano para vistas de la ciudad."},
+{"id":"d3-p2","time":"11:00","duration":"1h","title":"Catedral de Santa Anastasia","category":"culture","location":"Katedrala Sv. Stošije","coordinates":{"lat":44.1156,"lng":15.2233},"googleMapsUrl":"https://www.google.com/maps?q=44.1156,15.2233","description":"La catedral más grande de Dalmacia. Su campanario ofrece las mejores vistas del casco antiguo.","tips":"El ascenso al campanario merece mucho la pena."},
+{"id":"d3-p3","time":"14:00","duration":"5h","title":"Excursión en barco a Kornati","category":"nature","location":"P.N. de Kornati","coordinates":{"lat":43.8000,"lng":15.3500},"googleMapsUrl":"https://www.google.com/maps?q=43.8000,15.3500","description":"Archipiélago de 89 islas deshabitadas con aguas cristalinas. Snorkel y almuerzo a bordo.","tips":"Reserva la tarde anterior. Alternativa: playas de Borik."},
+{"id":"d3-p4","time":"19:00","duration":"1h","title":"Saludo al Sol al anochecer","category":"nature","location":"Pozdrav Suncu","coordinates":{"lat":44.1189,"lng":15.2178},"googleMapsUrl":"https://www.google.com/maps?q=44.1189,15.2178","description":"Círculo solar fotovoltaico que de noche crea un hipnótico espectáculo de luces.","tips":"Combina con la cena en el paseo marítimo."}]},
+{"dayNumber":4,"date":"2026-09-29","weekday":"Martes","city":"Krka/Split","title":"Krka y Šibenik","emoji":"💦","enabled":true,"summary":"Cascadas de travertino, catedral UNESCO única en piedra y llegada a Split.","accommodation":{"name":"Hotel Vestibul Palace","area":"Split - Palacio de Diocleciano","coordinates":{"lat":43.5081,"lng":16.4402},"googleMapsUrl":"https://www.google.com/maps?q=43.5081,16.4402"},"plans":[
+{"id":"d4-p1","time":"09:00","duration":"3h","title":"P.N. de Krka","category":"nature","location":"Skradinski Buk","coordinates":{"lat":43.8058,"lng":15.9714},"googleMapsUrl":"https://www.google.com/maps?q=43.8058,15.9714","description":"Cataratas Skradinski Buk: cascadas de travertino con pasarelas. Paseo en barco por el río incluido.","tips":"Compra entradas online. El baño está restringido actualmente."},
+{"id":"d4-p2","time":"13:00","duration":"1h30min","title":"Catedral de Santiago de Šibenik","category":"culture","location":"Katedrala Sv. Jakova","coordinates":{"lat":43.7359,"lng":15.8886},"googleMapsUrl":"https://www.google.com/maps?q=43.7359,15.8886","description":"Joya del gótico-renacimiento (UNESCO) en piedra y mármol. Su friso de 71 rostros es célebre.","tips":"Pasea por las callejuelas medievales del casco antiguo."},
+{"id":"d4-p3","time":"15:00","duration":"1h30min","title":"Fortaleza de San Nicolás","category":"culture","location":"Tvrđava Sv. Nikole","coordinates":{"lat":43.7183,"lng":15.8817},"googleMapsUrl":"https://www.google.com/maps?q=43.7183,15.8817","description":"Fortaleza renacentista sobre un islote (UNESCO). Arquitectura militar veneciana.","tips":"Comprueba horarios de acceso."},
+{"id":"d4-p4","time":"17:00","duration":"2h","title":"Traslado a Split y aperitivo","category":"food","location":"Riva de Split","coordinates":{"lat":43.5074,"lng":16.4394},"googleMapsUrl":"https://www.google.com/maps?q=43.5074,16.4394","description":"1h hasta Split. Aperitivo en el paseo marítimo (Riva) con vistas al puerto.","tips":"Deja el coche en un parking; el casco antiguo es peatonal."}]},
+{"dayNumber":5,"date":"2026-09-30","weekday":"Miércoles","city":"Split","title":"Split","emoji":"🏛️","enabled":true,"summary":"Vivir en un palacio romano de 1.700 años, fortaleza de Juego de Tronos, senderismo urbano y playa.","accommodation":{"name":"Split (misma base)","area":"Palacio de Diocleciano","coordinates":{"lat":43.5081,"lng":16.4402},"googleMapsUrl":"https://www.google.com/maps?q=43.5081,16.4402"},"plans":[
+{"id":"d5-p1","time":"09:00","duration":"2h30min","title":"Palacio de Diocleciano","category":"culture","location":"Dioklecijanova palača","coordinates":{"lat":43.5083,"lng":16.4405},"googleMapsUrl":"https://www.google.com/maps?q=43.5083,16.4405","description":"Complejo romano de los mejor conservados del mundo (UNESCO, 305 d.C.). Peristilo, Baptisterio, Catedral y sótanos.","tips":"Empieza temprano para evitar los cruceros."},
+{"id":"d5-p2","time":"12:00","duration":"1h30min","title":"Fortaleza de Klis","category":"culture","location":"Tvrđava Klis","coordinates":{"lat":43.5606,"lng":16.5228},"googleMapsUrl":"https://www.google.com/maps?q=43.5606,16.5228","description":"Fortaleza en un desfiladero. Escenario de Meereen en Juego de Tronos, con vistas espectaculares.","tips":"Cerca hay konobas famosas por su cordero asado."},
+{"id":"d5-p3","time":"15:00","duration":"1h30min","title":"Senderismo Colina Marjan","category":"hiking","location":"Park-šuma Marjan","coordinates":{"lat":43.5100,"lng":16.4200},"googleMapsUrl":"https://www.google.com/maps?q=43.5100,16.4200","description":"Pulmón verde de Split. Subida de ~45 min entre pinares hasta miradores con vistas de la ciudad y las islas.","tips":"Lleva agua. De bajada, la Galería Meštrović queda de paso."},
+{"id":"d5-p4","time":"17:00","duration":"2h","title":"Playa Bačvice","category":"beach","location":"Plaža Bačvice","coordinates":{"lat":43.5044,"lng":16.4489},"googleMapsUrl":"https://www.google.com/maps?q=43.5044,16.4489","description":"Rara playa de arena, cerca del centro. Los locales juegan al picigin en aguas someras.","tips":"Anímate a un partido de picigin con los locales."},
+{"id":"d5-p5","time":"20:00","duration":"2h","title":"Cena en el Peristilo","category":"food","location":"Peristil, Split","coordinates":{"lat":43.5083,"lng":16.4405},"googleMapsUrl":"https://www.google.com/maps?q=43.5083,16.4405","description":"Cenar en el corazón del palacio romano. Prueba la peka y el brudet.","tips":"Reserva con antelación."}]},
+{"dayNumber":6,"date":"2026-10-01","weekday":"Jueves","city":"Makarska","title":"Makarska y Biokovo","emoji":"🏔️","enabled":true,"summary":"Una de las mejores playas de Europa, skywalk de cristal a 1.228 m, ostras míticas y Puente de Pelješac.","accommodation":{"name":"Hotel Excelsior (5★)","area":"Dubrovnik","coordinates":{"lat":42.6389,"lng":18.1178},"googleMapsUrl":"https://www.google.com/maps?q=42.6389,18.1178"},"plans":[
+{"id":"d6-p1","time":"09:00","duration":"1h30min","title":"Traslado a Brela","category":"transport","location":"Ruta Split → Brela","coordinates":{"lat":43.3722,"lng":16.9333},"googleMapsUrl":"https://www.google.com/maps?q=43.3722,16.9333","description":"1,5h por la Riviera de Makarska, con el Biokovo cayendo sobre el mar.","tips":"La carretera Magistrala es de las más escénicas del Adriático."},
+{"id":"d6-p2","time":"10:30","duration":"1h30min","title":"Playa Punta Rata (Brela)","category":"beach","location":"Plaža Punta Rata","coordinates":{"lat":43.3722,"lng":16.9333},"googleMapsUrl":"https://www.google.com/maps?q=43.3722,16.9333","description":"Elegida entre las mejores playas de Europa. Guijarros blancos, pinos y agua turquesa.","tips":"Agua a ~23-24°C en octubre, perfecta y sin masificación."},
+{"id":"d6-p3","time":"12:30","duration":"2h","title":"Biokovo Skywalk y senderismo","category":"viewpoint","location":"Biokovo Skywalk","coordinates":{"lat":43.3253,"lng":17.0442},"googleMapsUrl":"https://www.google.com/maps?q=43.3253,17.0442","description":"Plataforma de cristal a 1.228 m sobre el Adriático. Senderismo con Brač, Hvar y Korčula a la vista.","tips":"Reserva online. Carretera de montaña estrecha: conduce con cuidado."},
+{"id":"d6-p4","time":"15:00","duration":"2h","title":"Puente de Pelješac","category":"transport","location":"Pelješki Most","coordinates":{"lat":42.9500,"lng":17.4300},"googleMapsUrl":"https://www.google.com/maps?q=42.9500,17.4300","description":"Puente de 2,4 km (2022) que conecta todo el trayecto por territorio croata, evitando Bosnia.","tips":"Ya no necesitas pasaporte para el corredor de Neum."},
+{"id":"d6-p5","time":"17:30","duration":"2h","title":"Ston: ostras y murallas","category":"food","location":"Ston","coordinates":{"lat":42.8383,"lng":17.6983},"googleMapsUrl":"https://www.google.com/maps?q=42.8383,17.6983","description":"Ostras legendarias. Las Murallas de Ston son las más largas de Europa tras la Gran Muralla China (5,5 km).","tips":"Cena en Vila Koruna."},
+{"id":"d6-p6","time":"21:00","duration":"1h","title":"Llegada a Dubrovnik","category":"transport","location":"Dubrovnik","coordinates":{"lat":42.6414,"lng":18.1075},"googleMapsUrl":"https://www.google.com/maps?q=42.6414,18.1075","description":"Llegada a la Perla del Adriático.","tips":"Confirma el parking del hotel: el casco antiguo es peatonal."}]},
+{"dayNumber":7,"date":"2026-10-02","weekday":"Viernes","city":"Dubrovnik","title":"Dubrovnik Histórica","emoji":"🏯","enabled":true,"summary":"Murallas al amanecer sin multitudes, fortalezas de Juego de Tronos, teleférico y cena con vistas.","accommodation":{"name":"Dubrovnik (misma base)","area":"Dubrovnik","coordinates":{"lat":42.6389,"lng":18.1178},"googleMapsUrl":"https://www.google.com/maps?q=42.6389,18.1178"},"plans":[
+{"id":"d7-p1","time":"07:45","duration":"2h","title":"Murallas al amanecer","category":"culture","location":"Murallas de Dubrovnik","coordinates":{"lat":42.6414,"lng":18.1075},"googleMapsUrl":"https://www.google.com/maps?q=42.6414,18.1075","description":"Recorrido de 2 km con luz de amanecer. El momento más mágico del viaje, sin cruceros.","tips":"Ve antes de las 8h. Entrada online."},
+{"id":"d7-p2","time":"10:00","duration":"1h","title":"Stradun","category":"culture","location":"Stradun (Placa)","coordinates":{"lat":42.6414,"lng":18.1080},"googleMapsUrl":"https://www.google.com/maps?q=42.6414,18.1080","description":"La arteria principal: calle barroca de mármol pulido, con la fuente de Onofrio.","tips":"A primera hora está casi vacía."},
+{"id":"d7-p3","time":"11:30","duration":"1h","title":"Fortaleza de Lovrijenac","category":"culture","location":"Tvrđava Lovrijenac","coordinates":{"lat":42.6403,"lng":18.1053},"googleMapsUrl":"https://www.google.com/maps?q=42.6403,18.1053","description":"El 'Gibraltar de Dubrovnik'. Escenario clave de Juego de Tronos. Vistas espectaculares.","tips":"La entrada de las murallas suele incluir el acceso."},
+{"id":"d7-p4","time":"13:00","duration":"1h30min","title":"Puerto Viejo","category":"culture","location":"Stara Luka","coordinates":{"lat":42.6417,"lng":18.1119},"googleMapsUrl":"https://www.google.com/maps?q=42.6417,18.1119","description":"Antiguo puerto medieval con ambiente de pescadores. Salida de barcos a las islas.","tips":"Buena zona para un almuerzo junto al agua."},
+{"id":"d7-p5","time":"15:00","duration":"2h","title":"Teleférico al Monte Srđ","category":"viewpoint","location":"Žičara / Mount Srđ","coordinates":{"lat":42.6486,"lng":18.1108},"googleMapsUrl":"https://www.google.com/maps?q=42.6486,18.1108","description":"Teleférico a 412 m para vistas de 360°: casco antiguo, Adriático e islas Eláfitas.","tips":"Alternativa: subir a pie por el sendero histórico (1h)."},
+{"id":"d7-p6","time":"20:00","duration":"2h","title":"Cena en Restaurante 360°","category":"food","location":"Restaurant 360","coordinates":{"lat":42.6425,"lng":18.1119},"googleMapsUrl":"https://www.google.com/maps?q=42.6425,18.1119","description":"Alta cocina sobre las murallas, con vistas nocturnas al puerto viejo.","tips":"Reserva con antelación. Alternativa: Nautika."}]},
+{"dayNumber":8,"date":"2026-10-03","weekday":"Sábado","city":"Dubrovnik","title":"Lokrum y Buceo","emoji":"🤿","enabled":true,"summary":"Isla-reserva con pavos reales, baño en playas urbanas y buceo en cuevas y arrecifes. Cena de despedida.","accommodation":{"name":"Dubrovnik (última noche)","area":"Dubrovnik","coordinates":{"lat":42.6389,"lng":18.1178},"googleMapsUrl":"https://www.google.com/maps?q=42.6389,18.1178"},"plans":[
+{"id":"d8-p1","time":"09:00","duration":"3h","title":"Isla de Lokrum","category":"nature","location":"Otok Lokrum","coordinates":{"lat":42.6250,"lng":18.1200},"googleMapsUrl":"https://www.google.com/maps?q=42.6250,18.1200","description":"Ferry de 15 min. Reserva natural con pavos reales, ruinas, jardín botánico y el 'Mar Muerto' para nadar.","tips":"Última salida del ferry ~18-19h."},
+{"id":"d8-p2","time":"13:00","duration":"2h","title":"Playa Banje / Šulić","category":"beach","location":"Banje Beach","coordinates":{"lat":42.6408,"lng":18.1153},"googleMapsUrl":"https://www.google.com/maps?q=42.6408,18.1153","description":"Banje es la más accesible y con las mejores vistas de las murallas.","tips":"Banje tiene chiringuito; Šulić es más íntima."},
+{"id":"d8-p3","time":"15:00","duration":"3h","title":"Buceo en Dubrovnik","category":"diving","location":"Arrecife Grebeni","coordinates":{"lat":42.6300,"lng":18.1050},"googleMapsUrl":"https://www.google.com/maps?q=42.6300,18.1050","description":"Inmersiones: Cueva de Betina (20-35m), arrecife de Grebeni (5-40m) y pecios. Bautismos para principiantes.","tips":"Mar a ~23°C. Sin certificación: snorkel guiado o kayak."},
+{"id":"d8-p4","time":"20:00","duration":"2h","title":"Cena de despedida","category":"food","location":"Bota Šare (Oyster Bar)","coordinates":{"lat":42.6411,"lng":18.1108},"googleMapsUrl":"https://www.google.com/maps?q=42.6411,18.1108","description":"Producto local excepcional. Paseo final por el Stradun iluminado.","tips":"Brinda con un vino Dingač de Pelješac."}]},
+{"dayNumber":9,"date":"2026-10-04","weekday":"Domingo","city":"Eláfites","title":"Islas Eláfites","emoji":"🚤","enabled":false,"summary":"Día extra opcional: escapada en barco a las Eláfitas, paraísos sin coches con playas de arena y aguas cristalinas.","accommodation":{"name":"Dubrovnik o salida según vuelo","area":"Dubrovnik","coordinates":{"lat":42.6389,"lng":18.1178},"googleMapsUrl":"https://www.google.com/maps?q=42.6389,18.1178"},"plans":[
+{"id":"d9-p1","time":"09:00","duration":"45min","title":"Ferry a las Eláfites","category":"transport","location":"Puerto de Gruž","coordinates":{"lat":42.6614,"lng":18.0864},"googleMapsUrl":"https://www.google.com/maps?q=42.6614,18.0864","description":"Salida desde el puerto de Gruž hacia el archipiélago de las Eláfites.","tips":"Hay tours que incluyen las tres islas con almuerzo a bordo."},
+{"id":"d9-p2","time":"10:00","duration":"2h","title":"Lopud y playa Šunj","category":"beach","location":"Plaža Šunj, Lopud","coordinates":{"lat":42.6853,"lng":17.9439},"googleMapsUrl":"https://www.google.com/maps?q=42.6853,17.9439","description":"Lopud no tiene coches. La playa de Šunj es de arena, aguas someras y turquesa.","tips":"Ideal para nadar y relajarse."},
+{"id":"d9-p3","time":"13:00","duration":"2h","title":"Šipan: almuerzo y snorkel","category":"nature","location":"Šipanska Luka","coordinates":{"lat":42.7211,"lng":17.8681},"googleMapsUrl":"https://www.google.com/maps?q=42.7211,17.8681","description":"La mayor de las Eláfites, tranquila y verde. Konobas de pescado fresco y calas para snorkel.","tips":"Prueba el pescado a la parrilla."},
+{"id":"d9-p4","time":"16:00","duration":"1h","title":"Koločep y regreso","category":"nature","location":"Koločep","coordinates":{"lat":42.6883,"lng":18.0139},"googleMapsUrl":"https://www.google.com/maps?q=42.6883,18.0139","description":"La isla habitada más cercana a Dubrovnik, con cuevas azules y senderos. Regreso al atardecer.","tips":"Confirma la última conexión de ferry."}]}
+],
+"variants":[
+{"days":6,"enabledDays":[1,2,3,5,6,7],"adjustment":"Eliminar Krka/Šibenik y una noche de Dubrovnik."},
+{"days":7,"enabledDays":[1,2,4,5,6,7,8],"adjustment":"Eliminar Zadar como ciudad (solo parada del atardecer)."},
+{"days":8,"enabledDays":[1,2,3,4,5,6,7,8],"adjustment":"Itinerario completo recomendado."},
+{"days":9,"enabledDays":[1,2,3,4,5,6,7,8,9],"adjustment":"Añadir día extra en las Islas Eláfitas."}
+],
+"practicalInfo":{
+"carRental":{"type":"One-way (Zagreb ZAG → Dubrovnik DBV)","notes":"Reserva con antelación. El Puente de Pelješac (2022) evita cruzar Bosnia."},
+"weather":{"airTemp":"22-26°C de día","seaTemp":"23-24°C","crowds":"60-70% menos turistas que en agosto"},
+"tickets":["Plitvice: online (se agota)","Murallas Dubrovnik: online (30-40€)","Biokovo Skywalk: reservar online","Krka: online"],
+"gastronomy":[{"dish":"Peka","desc":"Pulpo o cordero bajo campana de brasas"},{"dish":"Ostras de Ston","desc":"Las mejores del Adriático"},{"dish":"Vino Dingač","desc":"El mejor tinto de Croacia (Plavac Mali)"},{"dish":"Rakija","desc":"Aguardiente local de bienvenida"}]
+}};
+
+const TEMPLATE={trip:{title:"Mi viaje",subtitle:"Descripción",startDate:"2026-01-01",endDate:"",durationDays:1,route:"",totalDistanceKm:0,transport:""},categories:{culture:{label:"Cultura",icon:"🏛️",color:"#8b5cf6"},food:{label:"Gastronomía",icon:"🍽️",color:"#ea580c"},beach:{label:"Playa",icon:"🏖️",color:"#0ea5e9"}},days:[{dayNumber:1,date:"2026-01-01",weekday:"",city:"Ciudad",title:"Día 1",emoji:"📍",enabled:true,summary:"Resumen del día",accommodation:{name:"Hotel",area:"Zona",coordinates:{lat:0,lng:0},googleMapsUrl:""},plans:[{id:"d1-p1",time:"09:00",duration:"1h",title:"Plan de ejemplo",category:"culture",location:"Lugar",coordinates:{lat:41.3874,lng:2.1686},googleMapsUrl:"",description:"Descripción del plan",tips:"Consejo útil",links:[],notes:"",done:false}]}],variants:[{days:1,enabledDays:[1],adjustment:"Versión mínima"}],practicalInfo:{}};
+
+/* ============ ESTADO ============ */
+const STORAGE_KEY='croaciaItinerarioV2';
+let DATA, activeIndex=0, viewMode='list', editMode=false, allExpanded=false;
+let activeCats=new Set(), openPlans=new Set(), dragIndex=null;
+let dayMapInst=null, tripMapInst=null, saveTimer=null;
+const PALETTE=['#0ea5e9','#8b5cf6','#16a34a','#ea580c','#d97706','#0891b2','#e11d48','#0d9488','#a855f7'];
+
+/* ============ UTILS ============ */
+const clone=o=>JSON.parse(JSON.stringify(o));
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const escA=s=>esc(s).replace(/"/g,'&quot;');
+function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(DATA));}catch(e){}}
+function loadStored(){try{const s=localStorage.getItem(STORAGE_KEY);if(s)return JSON.parse(s);}catch(e){}return null;}
+function autosave(){clearTimeout(saveTimer);saveTimer=setTimeout(save,350);}
+function catInfo(k){return (DATA.categories&&DATA.categories[k])||{label:k,icon:'📍',color:'#64748b'};}
+function mapEmbed(lat,lng){return `https://maps.google.com/maps?q=${lat},${lng}&z=14&output=embed`;}
+function parseISO(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+function fmtISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function weekdayEs(d){const s=new Intl.DateTimeFormat('es-ES',{weekday:'long'}).format(d);return s.charAt(0).toUpperCase()+s.slice(1);}
+function haversine(a,b){const R=6371,r=x=>x*Math.PI/180;const dLat=r(b.lat-a.lat),dLng=r(b.lng-a.lng);
+const s=Math.sin(dLat/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLng/2)**2;return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));}
+function estimate(km){if(km<1.2){return{mode:'🚶',min:Math.max(1,Math.round(km/4.8*60))};}return{mode:'🚗',min:Math.max(1,Math.round(km*1.3/45*60))};}
+function firstEnabled(){const i=DATA.days.findIndex(d=>d.enabled!==false);return i<0?0:i;}
+function normalize(){
+ if(!DATA.trip)DATA.trip={};if(!DATA.categories)DATA.categories={};if(!Array.isArray(DATA.days))DATA.days=[];
+ DATA.days.forEach(d=>{if(d.enabled===undefined)d.enabled=true;if(!Array.isArray(d.plans))d.plans=[];
+  d.plans.forEach(p=>{if(!Array.isArray(p.links))p.links=[];if(p.notes===undefined)p.notes='';if(p.done===undefined)p.done=false;});});
+}
+function recalcDates(){
+ if(!DATA.trip.startDate)return;let cur=parseISO(DATA.trip.startDate),last=null,count=0;
+ DATA.days.forEach(d=>{if(d.enabled!==false){d.date=fmtISO(cur);d.weekday=weekdayEs(cur);last=d.date;count++;cur.setDate(cur.getDate()+1);}});
+ DATA.trip.endDate=last;DATA.trip.durationDays=count;
+}
+
+/* ============ RENDER PRINCIPAL ============ */
+function renderAll(){normalize();if(DATA.days[activeIndex]?.enabled===false)activeIndex=firstEnabled();
+ renderTrip();renderFilters();renderDays();renderDayContent();renderInfo();updateViewSeg();updateEditBtn();}
+function renderTrip(){
+ document.getElementById('tripTitle').textContent=DATA.trip.title||'Itinerario';
+ document.getElementById('tripSubtitle').textContent=DATA.trip.subtitle||'';
+ const t=DATA.trip;document.getElementById('tripMeta').innerHTML=[
+  t.durationDays?`<span class="chip">🗓️ <b>${t.durationDays} días</b></span>`:'',
+  t.startDate?`<span class="chip">▶️ <b>${t.startDate}</b> → <b>${t.endDate||''}</b></span>`:'',
+  t.totalDistanceKm?`<span class="chip">🛣️ <b>${t.totalDistanceKm} km</b></span>`:'',
+  t.transport?`<span class="chip">🚗 <b>${t.transport}</b></span>`:''].join('');
+}
+function usedCats(){const s=new Set();DATA.days.forEach(d=>d.enabled!==false&&d.plans.forEach(p=>s.add(p.category)));return[...s];}
+function renderFilters(){
+ const cats=usedCats();cats.forEach(c=>{if(!activeCats.has('__init'))return;});
+ if(activeCats.size===0||activeCats.has('__init')){activeCats=new Set(cats);}
+ const el=document.getElementById('filters');el.innerHTML=cats.map(c=>{const ci=catInfo(c);const on=activeCats.has(c);
+  return `<span class="fchip ${on?'on':''}" style="${on?'background:'+ci.color+';border-color:'+ci.color:''}" onclick="toggleCat('${c}')">${ci.icon} ${ci.label}</span>`;}).join('');
+}
+function toggleCat(c){activeCats.has(c)?activeCats.delete(c):activeCats.add(c);if(activeCats.size===0)activeCats=new Set(usedCats());renderFilters();renderDayContent();}
+function renderDays(){
+ const sel=document.getElementById('daySelector');sel.innerHTML='';
+ DATA.days.forEach((d,i)=>{if(d.enabled===false)return;const total=d.plans.length,done=d.plans.filter(p=>p.done).length;
+  const b=document.createElement('button');b.className='day-btn'+(i===activeIndex?' active':'');
+  b.innerHTML=`<span class="badge">${done}/${total}</span><div class="dnum">Día ${d.dayNumber}</div><div class="demoji">${d.emoji||'📍'}</div><div class="dcity">${esc(d.city||d.title||'')}</div>`;
+  b.onclick=()=>{activeIndex=i;renderDays();renderDayContent();window.scrollTo({top:0,behavior:'smooth'});};sel.appendChild(b);});
+}
+function updateViewSeg(){document.querySelectorAll('#viewSeg button').forEach(b=>b.classList.toggle('active',b.dataset.v===viewMode));
+ document.getElementById('expandBtn').style.display=(viewMode==='map')?'none':'';}
+function setView(v){viewMode=v;if(dayMapInst){dayMapInst.remove();dayMapInst=null;}updateViewSeg();renderDayContent();}
+function updateEditBtn(){const b=document.getElementById('editBtn');b.classList.toggle('active',editMode);b.querySelector('span').textContent=editMode?'Editando':'Editar';}
+function toggleEdit(){editMode=!editMode;updateEditBtn();renderDayContent();}
+function toggleExpandAll(){const day=DATA.days[activeIndex];const vis=day.plans.filter(p=>activeCats.has(p.category));
+ if(allExpanded){openPlans.clear();allExpanded=false;}else{vis.forEach(p=>openPlans.add(p.id));allExpanded=true;}
+ document.getElementById('expandBtn').textContent=allExpanded?'⇕ Colapsar todo':'⇕ Expandir todo';renderDayContent();}
+
+function dayRouteUrl(day){const pts=day.plans.filter(p=>activeCats.has(p.category)&&p.coordinates&&p.coordinates.lat).map(p=>`${p.coordinates.lat},${p.coordinates.lng}`);
+ if(pts.length<2)return null;const o=pts[0],d=pts[pts.length-1],w=pts.slice(1,-1).join('|');
+ let u=`https://www.google.com/maps/dir/?api=1&origin=${o}&destination=${d}`;if(w)u+=`&waypoints=${encodeURIComponent(w)}`;return u;}
+
+function renderDayContent(){
+ const day=DATA.days[activeIndex];const c=document.getElementById('dayContent');const acc=day.accommodation;
+ const routeUrl=dayRouteUrl(day);
+ let head=`<div class="day-head"><h2>${day.emoji||''} ${esc(day.title||day.city)}</h2>
+  <div class="date">${esc(day.weekday||'')} · ${esc(day.date||'')}</div>
+  <div class="summary">${esc(day.summary||'')}</div>
+  ${acc?`<div class="acc">🛏️ <span>${esc(acc.name||'')}${acc.area?' · '+esc(acc.area):''}</span>${acc.googleMapsUrl?` · <a href="${escA(acc.googleMapsUrl)}" target="_blank" rel="noopener">Ver ubicación</a>`:''}</div>`:''}
+  <div class="headbtns">${routeUrl?`<a class="btn small" href="${routeUrl}" target="_blank" rel="noopener">🧭 Ruta del día en Maps</a>`:''}
+  <button class="btn small" onclick="setView('map')">📍 Ver día en mapa</button></div></div>`;
+ if(viewMode==='map'){
+  c.innerHTML=head+`<div id="dayMap"></div>`;setTimeout(()=>initDayMap(day),40);return;
+ }
+ c.innerHTML=head+`<div class="plans view-${viewMode}">${renderPlans(day)}</div>`;
+ requestAnimationFrame(()=>{openPlans.forEach(id=>{const el=document.querySelector(`.plan[data-id="${CSS.escape(id)}"]`);
+  if(el){el.classList.add('open');const b=el.querySelector('.plan-body');if(b)b.style.maxHeight=(b.scrollHeight+60)+'px';}});});
+}
+function renderPlans(day){
+ const vis=day.plans.filter(p=>activeCats.has(p.category));
+ if(!vis.length)return `<div class="empty">No hay planes en las categorías seleccionadas.</div>`;
+ let html='';
+ vis.forEach((p,idx)=>{html+=planCard(p,day);
+  if(idx<vis.length-1){const a=p.coordinates,b=vis[idx+1].coordinates;
+   if(a&&b&&a.lat&&b.lat){const km=haversine(a,b),e=estimate(km);
+    const du=`https://www.google.com/maps/dir/?api=1&origin=${a.lat},${a.lng}&destination=${b.lat},${b.lng}`;
+    html+=`<div class="connector">${e.mode} ≈ ${km.toFixed(1)} km · ~${e.min} min<a href="${du}" target="_blank" rel="noopener">Ver ruta</a></div>`;}}});
+ if(editMode)html+=`<button class="btn addplan" onclick="addPlan()">➕ Añadir plan</button>`;
+ return html;
+}
+function planCard(p,day){
+ const ci=catInfo(p.category),co=p.coordinates||{},ri=day.plans.indexOf(p);
+ const titleHtml=editMode?`<input class="edit-inp title-inp" value="${escA(p.title)}" onclick="event.stopPropagation()" onchange="editField(${ri},'title',this.value)">`
+   :`<div class="title ${p.done?'done':''}">${esc(p.title)}</div>`;
+ const timeHtml=editMode?`<input class="edit-inp time-inp" value="${escA(p.time||'')}" onclick="event.stopPropagation()" onchange="editField(${ri},'time',this.value)"><br><input class="edit-inp dur-inp" value="${escA(p.duration||'')}" onclick="event.stopPropagation()" onchange="editField(${ri},'duration',this.value)">`
+   :`<div class="t">${esc(p.time||'')}</div><div class="d">${esc(p.duration||'')}</div>`;
+ const catOpts=Object.keys(DATA.categories).map(k=>`<option value="${k}" ${k===p.category?'selected':''}>${DATA.categories[k].label}</option>`).join('');
+ return `<div class="plan ${p.done?'done-plan':''}" data-id="${escA(p.id)}" ${editMode?`draggable="true" ondragstart="dragStart(event,${ri})" ondragover="dragOver(event)" ondrop="dragDrop(event,${ri})"`:''}>
+  <div class="plan-head" onclick="togglePlan(this)">
+   ${editMode?`<span class="drag-handle" title="Arrastra para reordenar">⠿</span>`:''}
+   <input type="checkbox" class="done-cb" ${p.done?'checked':''} onclick="event.stopPropagation()" onchange="toggleDone(${ri})">
+   <div class="plan-time">${timeHtml}</div>
+   <div class="plan-icon" style="background:${ci.color}22;border:1px solid ${ci.color}55">${ci.icon}</div>
+   <div class="plan-main">${titleHtml}<div class="cat">${esc(ci.label)}${p.location&&!editMode?' · '+esc(p.location):''}</div></div>
+   <div class="plan-arrow">⌄</div>
+  </div>
+  <div class="plan-body"><div class="plan-body-inner">
+   ${editMode?`<label class="mini-label">Categoría</label><select class="edit-inp" onchange="editField(${ri},'category',this.value)">${catOpts}</select>`:''}
+   ${p.location?`<div class="loc">📍 ${esc(p.location)}</div>`:''}
+   ${p.description?`<div class="desc">${esc(p.description)}</div>`:''}
+   ${p.tips?`<div class="tips"><b>💡</b><span>${esc(p.tips)}</span></div>`:''}
+   <label class="mini-label">📝 Mis notas</label>
+   <textarea class="note" placeholder="Añade tus notas…" oninput="noteInput(${ri},this.value)">${esc(p.notes||'')}</textarea>
+   <label class="mini-label">🔗 Enlaces (reservas, tickets…)</label>
+   <div class="links">${(p.links||[]).map((l,li)=>`<div class="linkrow"><a href="${escA(l.url)}" target="_blank" rel="noopener">${esc(l.label||l.url)}</a><button onclick="removeLink(${ri},${li})">✕</button></div>`).join('')}</div>
+   <div class="linkform"><input id="ll-${escA(p.id)}" placeholder="Etiqueta"><input id="lu-${escA(p.id)}" placeholder="https://…"><button class="btn small" onclick="addLink(${ri},'${escA(p.id)}')">Añadir</button></div>
+   ${(co.lat&&co.lng)?`<div class="map-box"><iframe loading="lazy" src="${mapEmbed(co.lat,co.lng)}"></iframe></div>
+   <div class="map-actions"><a href="${escA(p.googleMapsUrl||('https://www.google.com/maps?q='+co.lat+','+co.lng))}" target="_blank" rel="noopener">📍 Abrir en Maps</a>
+   <a href="https://www.google.com/maps/dir/?api=1&destination=${co.lat},${co.lng}" target="_blank" rel="noopener">🧭 Cómo llegar</a></div>`:''}
+   ${editMode?`<button class="del-plan" onclick="deletePlan(${ri})">🗑️ Eliminar plan</button>`:''}
+  </div></div></div>`;
+}
+
+/* ============ INTERACCIÓN PLANES ============ */
+function togglePlan(head){const plan=head.closest('.plan'),id=plan.dataset.id,body=plan.querySelector('.plan-body');
+ if(openPlans.has(id)){openPlans.delete(id);body.style.maxHeight=null;plan.classList.remove('open');}
+ else{openPlans.add(id);plan.classList.add('open');body.style.maxHeight=(body.scrollHeight+60)+'px';}}
+function toggleDone(ri){const p=DATA.days[activeIndex].plans[ri];p.done=!p.done;autosave();renderDays();renderDayContent();}
+function editField(ri,f,v){DATA.days[activeIndex].plans[ri][f]=v;if(f==='category'){renderFilters();}autosave();}
+function noteInput(ri,v){DATA.days[activeIndex].plans[ri].notes=v;autosave();}
+function addLink(ri,pid){const l=document.getElementById('ll-'+pid),u=document.getElementById('lu-'+pid);
+ if(!u.value)return;DATA.days[activeIndex].plans[ri].links.push({label:l.value||u.value,url:u.value});autosave();renderDayContent();}
+function removeLink(ri,li){DATA.days[activeIndex].plans[ri].links.splice(li,1);autosave();renderDayContent();}
+function addPlan(){const day=DATA.days[activeIndex];const id=day.plans[0]?.id?.split('-p')[0]||('d'+day.dayNumber);
+ day.plans.push({id:id+'-p'+Date.now(),time:'12:00',duration:'1h',title:'Nuevo plan',category:usedCats()[0]||'culture',location:'',coordinates:null,googleMapsUrl:'',description:'',tips:'',links:[],notes:'',done:false});
+ autosave();renderDays();renderDayContent();}
+function deletePlan(ri){if(!confirm('¿Eliminar este plan?'))return;const p=DATA.days[activeIndex].plans[ri];openPlans.delete(p.id);
+ DATA.days[activeIndex].plans.splice(ri,1);autosave();renderDays();renderDayContent();}
+function dragStart(e,i){dragIndex=i;e.dataTransfer.effectAllowed='move';}
+function dragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';}
+function dragDrop(e,i){e.preventDefault();if(dragIndex===null||dragIndex===i)return;const arr=DATA.days[activeIndex].plans;
+ const[it]=arr.splice(dragIndex,1);arr.splice(i,0,it);dragIndex=null;autosave();renderDayContent();}
+
+/* ============ MAPAS LEAFLET ============ */
+function tiles(map){L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+ {attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:'abcd',maxZoom:19}).addTo(map);}
+function pin(color,label){return L.divIcon({className:'',html:`<div class="pin" style="background:${color}">${label}</div>`,iconSize:[28,28],iconAnchor:[14,14],popupAnchor:[0,-14]});}
+function initDayMap(day){
+ if(dayMapInst){dayMapInst.remove();dayMapInst=null;}
+ dayMapInst=L.map('dayMap');tiles(dayMapInst);
+ const path=[];let n=0;
+ day.plans.forEach(p=>{if(activeCats.has(p.category)&&p.coordinates&&p.coordinates.lat){n++;const c=p.coordinates,ci=catInfo(p.category);
+  L.marker([c.lat,c.lng],{icon:pin(ci.color,n)}).addTo(dayMapInst).bindPopup(`<b>${esc(p.time)} · ${esc(p.title)}</b><br>${esc(p.location||'')}`);
+  path.push([c.lat,c.lng]);}});
+ if(path.length>1)L.polyline(path,{color:'#0ea5e9',weight:3,opacity:.7,dashArray:'6,8'}).addTo(dayMapInst);
+ if(path.length)dayMapInst.fitBounds(path,{padding:[35,35]});else dayMapInst.setView([44.5,16],7);
+ setTimeout(()=>dayMapInst.invalidateSize(),60);
+}
+function openTripMap(){document.getElementById('tripModal').classList.add('show');setTimeout(initTripMap,60);}
+function closeTripMap(){document.getElementById('tripModal').classList.remove('show');if(tripMapInst){tripMapInst.remove();tripMapInst=null;}}
+function initTripMap(){
+ if(tripMapInst){tripMapInst.remove();tripMapInst=null;}
+ tripMapInst=L.map('tripMap');tiles(tripMapInst);
+ const bounds=[];let di=0;const legend=[];
+ DATA.days.forEach(day=>{if(day.enabled===false)return;const color=PALETTE[di%PALETTE.length];di++;
+  legend.push({color,label:`Día ${day.dayNumber} · ${day.city}`});const seg=[];
+  day.plans.forEach(p=>{if(activeCats.has(p.category)&&p.coordinates&&p.coordinates.lat){const c=p.coordinates;
+   L.marker([c.lat,c.lng],{icon:pin(color,day.dayNumber)}).addTo(tripMapInst)
+    .bindPopup(`<b>Día ${day.dayNumber} · ${esc(day.city)}</b><br>${esc(p.time)} ${esc(p.title)}`);
+   bounds.push([c.lat,c.lng]);seg.push([c.lat,c.lng]);}});
+  if(seg.length>1)L.polyline(seg,{color,weight:3,opacity:.55}).addTo(tripMapInst);});
+ if(bounds.length)tripMapInst.fitBounds(bounds,{padding:[30,30]});else tripMapInst.setView([44.5,16],6);
+ document.getElementById('tripLegend').innerHTML=legend.map(l=>`<span class="li"><span class="dot" style="background:${l.color}"></span>${esc(l.label)}</span>`).join('');
+ setTimeout(()=>tripMapInst.invalidateSize(),80);
+}
+
+/* ============ INFO SECCIONES ============ */
+function renderInfo(){
+ const el=document.getElementById('infoSections');let html='';
+ if(DATA.variants&&DATA.variants.length){html+=`<details class="info"><summary>🔀 Variantes de duración</summary><div class="info-body">`;
+  DATA.variants.forEach(v=>{html+=`<div class="vrow"><b>${v.days} días</b><span>${esc(v.adjustment||'')}</span><button class="btn small" onclick="applyVariant([${(v.enabledDays||[]).join(',')}])">Aplicar</button></div>`;});
+  html+=`</div></details>`;}
+ const pi=DATA.practicalInfo;
+ if(pi){html+=`<details class="info"><summary>ℹ️ Información práctica</summary><div class="info-body">`;
+  if(pi.weather)html+=`<p><b>🌡️ Clima:</b> ${esc(pi.weather.airTemp||'')} · Mar ${esc(pi.weather.seaTemp||'')} · ${esc(pi.weather.crowds||'')}</p>`;
+  if(pi.carRental)html+=`<p style="margin-top:8px"><b>🚗 Coche:</b> ${esc(pi.carRental.type||'')}. ${esc(pi.carRental.notes||'')}</p>`;
+  if(pi.tickets){html+=`<p style="margin-top:8px"><b>🎫 Entradas online:</b></p><ul>`;pi.tickets.forEach(x=>html+=`<li>${esc(x)}</li>`);html+=`</ul>`;}
+  if(pi.gastronomy){html+=`<p style="margin-top:8px"><b>🍽️ Gastronomía:</b></p><table>`;pi.gastronomy.forEach(g=>html+=`<tr><td>${esc(g.dish)}</td><td>${esc(g.desc)}</td></tr>`);html+=`</table>`;}
+  html+=`</div></details>`;}
+ el.innerHTML=html;
+}
+
+/* ============ CONFIG ============ */
+const configModal=document.getElementById('configModal');
+function openConfig(){renderConfig();configModal.classList.add('show');}
+function closeConfig(){configModal.classList.remove('show');}
+configModal.onclick=e=>{if(e.target===configModal)closeConfig();};
+document.getElementById('tripModal').onclick=e=>{if(e.target.id==='tripModal')closeTripMap();};
+function renderConfig(){
+ document.getElementById('startDate').value=DATA.trip.startDate||'';
+ const vb=document.getElementById('variantBtns');
+ vb.innerHTML=(DATA.variants||[]).map(v=>{const cur=(v.enabledDays||[]).every(n=>DATA.days.find(d=>d.dayNumber===n)?.enabled!==false)&&DATA.days.filter(d=>d.enabled!==false).length===(v.enabledDays||[]).length;
+  return `<button class="btn ${cur?'active':''}" onclick="applyVariant([${(v.enabledDays||[]).join(',')}])">${v.days} días</button>`;}).join('');
+ const dt=document.getElementById('dayToggles');
+ dt.innerHTML=DATA.days.map((d,i)=>`<label><input type="checkbox" ${d.enabled!==false?'checked':''} onchange="toggleDay(${i})"><span>Día ${d.dayNumber} · ${esc(d.city||d.title)}</span></label>`).join('');
+}
+function changeStart(v){DATA.trip.startDate=v;recalcDates();save();renderAll();renderConfig();}
+function toggleDay(i){const enabled=DATA.days.filter(d=>d.enabled!==false).length;
+ if(DATA.days[i].enabled!==false&&enabled<=1){alert('Debe quedar al menos un día activo.');renderConfig();return;}
+ DATA.days[i].enabled=!(DATA.days[i].enabled!==false);recalcDates();if(DATA.days[activeIndex].enabled===false)activeIndex=firstEnabled();
+ activeCats=new Set(['__init']);save();renderAll();renderConfig();}
+function applyVariant(list){DATA.days.forEach(d=>d.enabled=list.includes(d.dayNumber));recalcDates();activeIndex=firstEnabled();
+ activeCats=new Set(['__init']);save();renderAll();renderConfig();}
+
+/* ============ CARGA / EXPORT ============ */
+function showStatus(m,ok){const s=document.getElementById('status');s.textContent=m;s.className='status '+(ok?'ok':'err');}
+function applyLoaded(obj){if(!obj.days||!Array.isArray(obj.days))throw new Error('Falta el array "days".');
+ DATA=obj;activeIndex=0;openPlans.clear();activeCats=new Set(['__init']);allExpanded=false;normalize();save();renderAll();}
+function loadText(txt){try{applyLoaded(JSON.parse(txt));showStatus('✅ Itinerario cargado ('+DATA.days.length+' días).',true);setTimeout(closeConfig,900);}
+ catch(e){showStatus('❌ Error: '+e.message,false);}}
+const fileInput=document.getElementById('fileInput'),dropZone=document.getElementById('dropZone');
+fileInput.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>loadText(ev.target.result);r.readAsText(f);};
+['dragover','dragenter'].forEach(ev=>dropZone.addEventListener(ev,e=>{e.preventDefault();dropZone.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>dropZone.addEventListener(ev,e=>{e.preventDefault();dropZone.classList.remove('drag');}));
+dropZone.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>loadText(ev.target.result);r.readAsText(f);});
+function loadFromUrl(){const u=document.getElementById('urlInput').value.trim();if(!u)return;showStatus('⏳ Cargando…',true);
+ fetch(u).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  .then(o=>{applyLoaded(o);showStatus('✅ Cargado desde URL ('+DATA.days.length+' días).',true);setTimeout(closeConfig,900);})
+  .catch(e=>showStatus('❌ No se pudo cargar (¿CORS o URL inválida?): '+e.message,false));}
+function download(name,obj){const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href);}
+function exportJSON(){download('mi-itinerario.json',DATA);}
+function downloadTemplate(){download('plantilla-itinerario.json',TEMPLATE);}
+function resetDefault(){if(!confirm('¿Restaurar el itinerario por defecto? Se perderán tus cambios.'))return;
+ localStorage.removeItem(STORAGE_KEY);DATA=clone(DEFAULT_DATA);activeIndex=0;openPlans.clear();activeCats=new Set(['__init']);
+ recalcDates();renderAll();renderConfig();showStatus('↺ Restaurado.',true);}
+
+/* ============ INIT ============ */
+(function(){DATA=loadStored()||clone(DEFAULT_DATA);normalize();activeCats=new Set(['__init']);
+ if(!loadStored())recalcDates();renderAll();})();
+</script>
+
+</body></html>
