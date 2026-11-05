@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "publishedVersion": "2026.11.05-r3",
+  "publishedVersion": "2026.11.05-r4",
   "id": "atenas-egina-2026",
   "name": "Atenas + Egina",
   "destination": "Atenas y Egina, Grecia",
@@ -56,7 +56,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "reservationId": "res-flights"
+      "reservationId": "res-flights",
+      "lat": 37.9364,
+      "lng": 23.9445
     },
     {
       "id": "act-002",
@@ -73,7 +75,9 @@
       "links": [],
       "estimated": 45,
       "spent": 0,
-      "reservationId": "res-arrival-transfer"
+      "reservationId": "res-arrival-transfer",
+      "lat": 37.972,
+      "lng": 23.7283
     },
     {
       "id": "act-003",
@@ -90,7 +94,9 @@
       "links": [],
       "estimated": 12,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.972,
+      "lng": 23.7283
     },
     {
       "id": "act-004",
@@ -107,7 +113,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.9684,
+      "lng": 23.7286
     },
     {
       "id": "act-005",
@@ -129,7 +137,9 @@
       ],
       "estimated": 20,
       "spent": 0,
-      "reservationId": "res-acropolis-museum"
+      "reservationId": "res-acropolis-museum",
+      "lat": 37.9684,
+      "lng": 23.7286
     },
     {
       "id": "act-006",
@@ -146,7 +156,9 @@
       "links": [],
       "estimated": 25,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.972,
+      "lng": 23.7283
     },
     {
       "id": "act-007",
@@ -163,7 +175,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.9721,
+      "lng": 23.7277
     },
     {
       "id": "act-008",
@@ -180,7 +194,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.9787,
+      "lng": 23.723
     },
     {
       "id": "act-009",
@@ -197,7 +213,9 @@
       "links": [],
       "estimated": 30,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.9787,
+      "lng": 23.723
     },
     {
       "id": "act-010",
@@ -214,7 +232,9 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.972,
+      "lng": 23.7283
     },
     {
       "id": "act-011",
@@ -236,7 +256,9 @@
       ],
       "estimated": 30,
       "spent": 0,
-      "reservationId": "res-acropolis"
+      "reservationId": "res-acropolis",
+      "lat": 37.9715,
+      "lng": 23.7267
     },
     {
       "id": "act-012",
@@ -253,7 +275,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.9724,
+      "lng": 23.7247
     },
     {
       "id": "act-013",
@@ -270,7 +294,9 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.9752,
+      "lng": 23.7225
     },
     {
       "id": "act-014",
@@ -287,7 +313,9 @@
       "links": [],
       "estimated": 25,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.9761,
+      "lng": 23.7205
     },
     {
       "id": "act-015",
@@ -304,7 +332,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.9728,
+      "lng": 23.7205
     },
     {
       "id": "act-016",
@@ -321,7 +351,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.9673,
+      "lng": 23.7215
     },
     {
       "id": "act-017",
@@ -338,7 +370,9 @@
       "links": [],
       "estimated": 30,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.9648,
+      "lng": 23.7242
     },
     {
       "id": "act-018",
@@ -355,7 +389,9 @@
       "links": [],
       "estimated": 18,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.9427,
+      "lng": 23.6469
     },
     {
       "id": "act-019",
@@ -377,7 +413,9 @@
       ],
       "estimated": 20,
       "spent": 0,
-      "reservationId": "res-ferry"
+      "reservationId": "res-ferry",
+      "lat": 37.7461,
+      "lng": 23.4284
     },
     {
       "id": "act-020",
@@ -394,7 +432,9 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.7461,
+      "lng": 23.4284
     },
     {
       "id": "act-021",
@@ -411,7 +451,9 @@
       "links": [],
       "estimated": 30,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.754,
+      "lng": 23.533
     },
     {
       "id": "act-022",
@@ -428,7 +470,9 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.754,
+      "lng": 23.533
     },
     {
       "id": "act-023",
@@ -445,7 +489,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.7479,
+      "lng": 23.4868
     },
     {
       "id": "act-024",
@@ -462,7 +508,9 @@
       "links": [],
       "estimated": 30,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.7461,
+      "lng": 23.4277
     },
     {
       "id": "act-025",
@@ -479,7 +527,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.7461,
+      "lng": 23.4277
     },
     {
       "id": "act-026",
@@ -501,7 +551,9 @@
       ],
       "estimated": 20,
       "spent": 0,
-      "reservationId": "res-ferry"
+      "reservationId": "res-ferry",
+      "lat": 37.9427,
+      "lng": 23.6469
     },
     {
       "id": "act-027",
@@ -518,7 +570,9 @@
       "links": [],
       "estimated": 5,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.972,
+      "lng": 23.7283
     },
     {
       "id": "act-028",
@@ -535,7 +589,9 @@
       "links": [],
       "estimated": 28,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.972,
+      "lng": 23.7283
     },
     {
       "id": "act-029",
@@ -552,7 +608,9 @@
       "links": [],
       "estimated": 8,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.972,
+      "lng": 23.7283
     },
     {
       "id": "act-030",
@@ -574,7 +632,9 @@
       ],
       "estimated": 15,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.989,
+      "lng": 23.7329
     },
     {
       "id": "act-031",
@@ -591,7 +651,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.9864,
+      "lng": 23.735
     },
     {
       "id": "act-032",
@@ -608,7 +670,9 @@
       "links": [],
       "estimated": 15,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.9838,
+      "lng": 23.7275
     },
     {
       "id": "act-033",
@@ -625,7 +689,9 @@
       "links": [],
       "estimated": 55,
       "spent": 0,
-      "reservationId": "res-sounion"
+      "reservationId": "res-sounion",
+      "lat": 37.65,
+      "lng": 24.0241
     },
     {
       "id": "act-034",
@@ -642,7 +708,9 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "reservationId": "res-sounion"
+      "reservationId": "res-sounion",
+      "lat": 37.65,
+      "lng": 24.0241
     },
     {
       "id": "act-035",
@@ -659,7 +727,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "reservationId": "res-sounion"
+      "reservationId": "res-sounion",
+      "lat": 37.9838,
+      "lng": 23.7275
     },
     {
       "id": "act-036",
@@ -676,7 +746,9 @@
       "links": [],
       "estimated": 38,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.9838,
+      "lng": 23.7275
     },
     {
       "id": "act-037",
@@ -693,7 +765,9 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.972,
+      "lng": 23.7283
     },
     {
       "id": "act-038",
@@ -710,7 +784,9 @@
       "links": [],
       "estimated": 35,
       "spent": 0,
-      "reservationId": null
+      "reservationId": null,
+      "lat": 37.976,
+      "lng": 23.7257
     },
     {
       "id": "act-039",
@@ -727,7 +803,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "reservationId": "res-hotel"
+      "reservationId": "res-hotel",
+      "lat": 37.972,
+      "lng": 23.7283
     },
     {
       "id": "act-040",
@@ -744,7 +822,9 @@
       "links": [],
       "estimated": 45,
       "spent": 0,
-      "reservationId": "res-departure-taxi"
+      "reservationId": "res-departure-taxi",
+      "lat": 37.9364,
+      "lng": 23.9445
     },
     {
       "id": "act-041",
@@ -761,7 +841,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "reservationId": "res-flights"
+      "reservationId": "res-flights",
+      "lat": 37.9364,
+      "lng": 23.9445
     }
   ],
   "accommodations": [
@@ -781,7 +863,9 @@
       "mapUrl": "https://www.google.com/maps/search/?api=1&query=Plaka%2C%20Athens%2C%20Greece",
       "estimated": 320,
       "spent": 0,
-      "reservationId": "res-hotel"
+      "reservationId": "res-hotel",
+      "lat": 37.972,
+      "lng": 23.7283
     }
   ],
   "reservations": [
