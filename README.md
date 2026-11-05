@@ -27,16 +27,18 @@ Abre `http://localhost:8080`. La instalación y la caché requieren HTTPS o `loc
 - `manifest.webmanifest`: instalación.
 - `sw.js`: caché básica.
 
-## Modelo de datos 2
+## Modelo de datos 2.1
 
 Cada viaje contiene:
 
-- `days`: fecha, nombre resumen y alojamiento del día.
-- `activities`: actividades ordenadas por día y hora.
+- `days`: fecha, nombre resumen y alojamiento asignado. El alojamiento se muestra como una actividad especial al final del día.
+- `activities`: actividades ordenadas por día y hora, con minimapa al expandirse.
 - `accommodations`: alojamientos y días asignados.
 - `reservations`: reservas generales con categoría y posible vínculo a una actividad.
 - `practical`: siete bloques de notas prácticas.
 - `links`: enlaces del viaje.
+
+Las secciones de Info conservan localmente su estado expandido o contraído. El mapa diario muestra la ruta completa sin una lista adicional.
 
 El presupuesto se calcula a partir de actividades, alojamientos y reservas. Si una actividad o alojamiento está vinculado a una reserva, solo se contabiliza la reserva.
 
