@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-05T18:18:24+01:00",
+  "trips": [
+    {
+      "id": "atenas-egina-2026",
+      "file": "data/trips/atenas-egina.json",
+      "name": "Atenas + Egina",
+      "destination": "Atenas y Egina, Grecia",
+      "startDate": "2026-05-14",
+      "endDate": "2026-05-18",
+      "cover": "assets/img/atenas-egina.svg"
+    }
+  ]
+}
