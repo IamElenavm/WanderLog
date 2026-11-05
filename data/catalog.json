@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "updatedAt": "2026-11-05T18:18:24+01:00",
   "trips": [
     {
@@ -9,7 +9,7 @@
       "destination": "Atenas y Egina, Grecia",
       "startDate": "2026-05-14",
       "endDate": "2026-05-18",
-      "cover": "assets/img/atenas-egina.svg"
+      "icon": "🇬🇷"
     }
   ]
 }

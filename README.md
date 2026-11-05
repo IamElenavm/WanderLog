@@ -1,15 +1,12 @@
 # WanderLog
 
-Aplicación estática, minimalista y mobile-first para organizar viajes. No requiere compilación, servidor propio ni clave de Google Maps.
+Aplicación estática de viajes, mobile-first, sin dependencias y compatible con GitHub Pages.
 
-## Publicar en GitHub Pages
+## Publicar
 
-1. Sube el contenido de esta carpeta a la raíz de un repositorio de GitHub.
+1. Sube el contenido de esta carpeta a la raíz de un repositorio.
 2. En **Settings → Pages**, selecciona **Deploy from a branch**.
 3. Elige la rama principal y la carpeta raíz (`/`).
-4. Abre la URL publicada por GitHub.
-
-> Para que la instalación y la caché sin conexión funcionen, la aplicación debe abrirse mediante HTTPS o `localhost`; no basta con abrir `index.html` directamente desde el sistema de archivos.
 
 ## Probar en local
 
@@ -17,30 +14,42 @@ Aplicación estática, minimalista y mobile-first para organizar viajes. No requ
 python3 -m http.server 8080
 ```
 
-Después abre `http://localhost:8080`.
+Abre `http://localhost:8080`. La instalación y la caché requieren HTTPS o `localhost`.
 
 ## Estructura
 
-- `index.html`: entrada de la aplicación.
-- `assets/app.js`: interfaz y lógica completa, sin dependencias.
-- `assets/styles.css`: diseño mobile-first.
+- `index.html`: entrada.
+- `assets/app.js`: interfaz, edición, cálculos e importación/exportación.
+- `assets/styles.css`: estilos compactos y mobile-first.
 - `assets/icons/`: iconos de la aplicación instalable.
-- `assets/img/`: imágenes locales.
-- `data/catalog.json`: catálogo publicado.
-- `data/trips/*.json`: un archivo por viaje publicado.
-- `manifest.webmanifest`: datos de instalación.
-- `sw.js`: caché básica sin conexión.
+- `data/catalog.json`: catálogo de viajes publicados.
+- `data/trips/*.json`: un JSON por viaje.
+- `manifest.webmanifest`: instalación.
+- `sw.js`: caché básica.
 
-## Datos y prioridad local
+## Modelo de datos 2
 
-- Cada cambio se guarda automáticamente en `localStorage`.
-- Si existe una copia local, tiene prioridad sobre el JSON publicado.
-- En **Configuración → Versión publicada** se puede descartar la copia local y restaurar el JSON del repositorio.
-- La exportación genera JSON descargable. La importación admite un viaje individual o una exportación completa.
+Cada viaje contiene:
+
+- `days`: fecha, nombre resumen y alojamiento del día.
+- `activities`: actividades ordenadas por día y hora.
+- `accommodations`: alojamientos y días asignados.
+- `reservations`: reservas generales con categoría y posible vínculo a una actividad.
+- `practical`: siete bloques de notas prácticas.
+- `links`: enlaces del viaje.
+
+El presupuesto se calcula a partir de actividades, alojamientos y reservas. Si una actividad o alojamiento está vinculado a una reserva, solo se contabiliza la reserva.
+
+## Guardado y versiones
+
+- Los cambios se guardan automáticamente en `localStorage`.
+- La copia local tiene prioridad sobre el JSON publicado.
+- **Configuración → Publicado** restaura el archivo del repositorio y elimina la copia local.
+- La importación acepta el modelo 2, exportaciones completas y viajes del modelo anterior, que se migran al abrirse.
 
 ## Añadir un viaje publicado
 
-1. Crea `data/trips/mi-viaje.json` siguiendo el modelo de `atenas-egina.json`.
+1. Crea `data/trips/mi-viaje.json` siguiendo `atenas-egina.json`.
 2. Añade su referencia a `data/catalog.json`.
-3. Añade el nuevo JSON y sus imágenes a la constante `CORE` de `sw.js` si deben estar disponibles sin conexión desde la primera visita.
-4. Cambia el nombre de la caché en `sw.js` al publicar una versión nueva.
+3. Añade el JSON a `CORE` en `sw.js`.
+4. Cambia el nombre de la caché al publicar una versión nueva.

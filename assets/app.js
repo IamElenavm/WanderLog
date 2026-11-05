@@ -1,603 +1,114 @@
 (() => {
-  "use strict";
-
-  const APP_VERSION = "1.0.0";
-  const STORAGE_PREFIX = "wanderlog.trip.";
-  const CUSTOM_KEY = "wanderlog.customTrips";
-  const SETTINGS_KEY = "wanderlog.settings";
-  const CATEGORIES = {
-    Transporte: { icon: "🚌", className: "transporte" },
-    Alojamiento: { icon: "🛏️", className: "alojamiento" },
-    Cultura: { icon: "🏛️", className: "cultura" },
-    Gastronomía: { icon: "🍽️", className: "gastronomia" },
-    Naturaleza: { icon: "🌿", className: "naturaleza" },
-    Otro: { icon: "📍", className: "otro" }
-  };
-  const STATUSES = ["Sin reserva necesaria", "Pendiente", "Reservado"];
-  const state = {
-    catalog: [],
-    published: new Map(),
-    trips: new Map(),
-    currentTripId: null,
-    view: "info",
-    expanded: new Set(),
-    modal: null,
-    deferredInstall: null,
-    settings: loadJSON(SETTINGS_KEY, { defaultCurrency: "EUR" }),
-    online: navigator.onLine
-  };
-
-  const app = document.querySelector("#app");
-  const importInput = document.querySelector("#json-import");
-
-  document.addEventListener("DOMContentLoaded", init);
-
-  async function init() {
-    window.addEventListener("online", () => { state.online = true; render(); toast("Conexión recuperada"); });
-    window.addEventListener("offline", () => { state.online = false; render(); toast("Estás sin conexión"); });
-    window.addEventListener("beforeinstallprompt", event => {
-      event.preventDefault();
-      state.deferredInstall = event;
-      render();
-    });
-    window.addEventListener("hashchange", applyRoute);
-    app.addEventListener("click", handleClick);
-    app.addEventListener("submit", handleSubmit);
-    app.addEventListener("change", handleChange);
-    importInput.addEventListener("change", importJSONFile);
-
-    await loadTrips();
-    applyRoute();
-    registerServiceWorker();
-  }
-
-  async function loadTrips() {
-    let catalog = { trips: [] };
-    try {
-      const response = await fetch("data/catalog.json", { cache: "no-cache" });
-      if (!response.ok) throw new Error("No se pudo cargar el catálogo");
-      catalog = await response.json();
-    } catch (error) {
-      console.warn(error);
-      toast("Catálogo publicado no disponible; se usarán los viajes locales");
-    }
-
-    const entries = Array.isArray(catalog.trips) ? catalog.trips : [];
-    const loaded = await Promise.all(entries.map(async entry => {
-      try {
-        const response = await fetch(entry.file, { cache: "no-cache" });
-        if (!response.ok) throw new Error(entry.file);
-        return await response.json();
-      } catch (error) {
-        console.warn("Viaje publicado no disponible", error);
-        return null;
-      }
-    }));
-
-    loaded.filter(Boolean).forEach(trip => {
-      normalizeTrip(trip);
-      state.published.set(trip.id, clone(trip));
-      const local = loadJSON(STORAGE_PREFIX + trip.id, null);
-      state.trips.set(trip.id, local ? normalizeTrip(local) : clone(trip));
-    });
-
-    const customIds = loadJSON(CUSTOM_KEY, []);
-    customIds.forEach(id => {
-      const local = loadJSON(STORAGE_PREFIX + id, null);
-      if (local) state.trips.set(id, normalizeTrip(local));
-    });
-    syncCatalog();
-  }
-
-  function normalizeTrip(trip) {
-    trip.schemaVersion = 1;
-    trip.currency ||= state.settings.defaultCurrency || "EUR";
-    trip.summary ||= "";
-    trip.travelers ||= "";
-    trip.notes ||= "";
-    trip.coverImage ||= "assets/icons/icon.svg";
-    trip.info ||= { accommodation: [], transport: [], practical: [], links: [] };
-    trip.info.accommodation ||= [];
-    trip.info.transport ||= [];
-    trip.info.practical ||= [];
-    trip.info.links ||= [];
-    trip.activities = Array.isArray(trip.activities) ? trip.activities : [];
-    trip.activities.forEach(activity => {
-      activity.id ||= uid("act");
-      activity.category = CATEGORIES[activity.category] ? activity.category : "Otro";
-      activity.status = STATUSES.includes(activity.status) ? activity.status : "Pendiente";
-      activity.links = Array.isArray(activity.links) ? activity.links : [];
-      activity.estimated = Number(activity.estimated) || 0;
-      activity.spent = Number(activity.spent) || 0;
-      activity.completed = Boolean(activity.completed);
-    });
-    sortActivities(trip);
-    return trip;
-  }
-
-  function syncCatalog() {
-    state.catalog = [...state.trips.values()]
-      .map(trip => ({ id: trip.id, name: trip.name, destination: trip.destination, startDate: trip.startDate, endDate: trip.endDate, cover: trip.coverImage }))
-      .sort((a, b) => (a.startDate || "").localeCompare(b.startDate || ""));
-  }
-
-  function applyRoute() {
-    const match = location.hash.match(/^#viaje\/([^/?]+)/);
-    if (match && state.trips.has(decodeURIComponent(match[1]))) {
-      state.currentTripId = decodeURIComponent(match[1]);
-      const params = new URLSearchParams(location.hash.split("?")[1] || "");
-      const requestedView = params.get("vista");
-      state.view = ["info", "horario", "mapa"].includes(requestedView) ? requestedView : state.view;
-    } else {
-      state.currentTripId = null;
-    }
-    state.modal = null;
-    render();
-  }
-
-  function render() {
-    app.innerHTML = `${state.online ? "" : '<div class="offline-banner">Sin conexión · los cambios se guardan en este dispositivo</div>'}${state.currentTripId ? renderTrip() : renderHome()}${renderModal()}`;
-  }
-
-  function renderTopbar(title = "", subtitle = "") {
-    return `<header class="topbar"><div class="topbar-inner">
-      ${state.currentTripId ? '<button class="icon-btn" data-action="home" aria-label="Volver a viajes">←</button>' : `<a class="brand" href="#"><img class="brand-logo" src="assets/icons/icon.svg" alt=""><span>WanderLog</span></a>`}
-      ${state.currentTripId ? `<div class="topbar-title"><strong>${esc(title)}</strong><span>${esc(subtitle)}</span></div>` : '<div style="flex:1"></div>'}
-      <button class="icon-btn" data-action="settings" aria-label="Abrir configuración">⚙️</button>
-    </div></header>`;
-  }
-
-  function renderHome() {
-    const cards = state.catalog.map(meta => renderTripCard(state.trips.get(meta.id))).join("");
-    return `${renderTopbar()}
-      <main class="page">
-        <section class="hero">
-          <div><p class="eyebrow">Tu ruta, a tu manera</p><h1>Viajes claros.<br>Recuerdos grandes.</h1><p>Organiza horarios, reservas, mapas y presupuesto en un solo lugar. Tus cambios se guardan automáticamente en este dispositivo.</p></div>
-          <div class="hero-card"><p class="eyebrow">Listo para salir</p><h2 style="margin:0">${state.catalog.length} ${state.catalog.length === 1 ? "viaje" : "viajes"}</h2><p>${totalActivities()} actividades · ${completedActivities()} completadas</p><button class="secondary-btn" data-action="import">Importar JSON</button></div>
-        </section>
-        <section class="section-heading"><div><h2>Mis viajes</h2><p>Abre un viaje para ver su plan.</p></div></section>
-        <div class="trip-grid">${cards || '<div class="empty-state">Todavía no hay viajes. Crea el primero abajo.</div>'}</div>
-        <section class="section-heading"><div><h2>Nuevo viaje</h2><p>Solo lo esencial; podrás completar los detalles después.</p></div></section>
-        ${renderQuickTripForm()}
-      </main>`;
-  }
-
-  function renderTripCard(trip) {
-    const total = trip.activities.length;
-    const completed = trip.activities.filter(a => a.completed).length;
-    const percent = total ? Math.round(completed / total * 100) : 0;
-    return `<article class="trip-card">
-      <div class="trip-card-cover"><img src="${safeSrc(trip.coverImage)}" alt="${esc(trip.destination)}" onerror="this.src='assets/icons/icon.svg'"><span class="trip-dates">${formatRange(trip.startDate, trip.endDate)}</span></div>
-      <div class="trip-card-body"><h3>${esc(trip.name)}</h3><p>${esc(trip.destination)}</p>
-        <div class="trip-card-meta"><div class="progress" aria-label="${percent}% completado"><i style="width:${percent}%"></i></div><small>${completed}/${total}</small><button class="primary-btn" data-action="open-trip" data-id="${attr(trip.id)}">Abrir</button></div>
-      </div>
-    </article>`;
-  }
-
-  function renderQuickTripForm() {
-    const today = new Date().toISOString().slice(0, 10);
-    return `<form class="quick-form form-grid cols-2" data-form="new-trip">
-      <div class="field"><label for="new-name">Nombre</label><input id="new-name" name="name" required placeholder="Escapada a Lisboa"></div>
-      <div class="field"><label for="new-destination">Destino</label><input id="new-destination" name="destination" required placeholder="Lisboa, Portugal"></div>
-      <div class="field"><label for="new-start">Inicio</label><input id="new-start" name="startDate" type="date" required value="${today}"></div>
-      <div class="field"><label for="new-end">Fin</label><input id="new-end" name="endDate" type="date" required value="${today}"></div>
-      <div class="field span-2"><label for="new-cover">Imagen de portada (URL o ruta local, opcional)</label><input id="new-cover" name="coverImage" placeholder="https://… o assets/img/mi-viaje.jpg"></div>
-      <div class="span-2"><button class="primary-btn" type="submit">Crear viaje</button></div>
-    </form>`;
-  }
-
-  function renderTrip() {
-    const trip = currentTrip();
-    return `${renderTopbar(trip.name, formatRange(trip.startDate, trip.endDate))}
-      <section class="trip-hero"><img src="${safeSrc(trip.coverImage)}" alt="${esc(trip.destination)}" onerror="this.style.display='none'"><div class="trip-hero-content"><p class="eyebrow">${esc(trip.destination)}</p><h1>${esc(trip.name)}</h1><p>${esc(trip.summary)}</p></div></section>
-      <nav class="tabbar" aria-label="Secciones del viaje">
-        ${tabButton("info", "ℹ️", "Info")}${tabButton("horario", "🗓️", "Horario")}${tabButton("mapa", "🗺️", "Mapa")}
-      </nav>
-      <main class="page">${state.view === "info" ? renderInfo(trip) : state.view === "horario" ? renderSchedule(trip) : renderMap(trip)}</main>
-      ${state.view === "horario" ? '<button class="fab" data-action="add-activity">＋ Añadir</button>' : ""}`;
-  }
-
-  function tabButton(view, icon, label) {
-    return `<button data-action="set-view" data-view="${view}" class="${state.view === view ? "active" : ""}"><span>${icon}</span>${label}</button>`;
-  }
-
-  function renderInfo(trip) {
-    const budget = tripBudget(trip);
-    return `<section class="stats-grid">
-      <div class="stat"><span>Duración</span><strong>${dayCount(trip.startDate, trip.endDate)} días</strong></div>
-      <div class="stat"><span>Actividades</span><strong>${trip.activities.length}</strong></div>
-      <div class="stat"><span>Estimado</span><strong>${money(budget.estimated, trip.currency)}</strong></div>
-      <div class="stat"><span>Gastado</span><strong>${money(budget.spent, trip.currency)}</strong></div>
-    </section>
-    <div class="info-grid">
-      <section class="panel"><div class="section-heading" style="margin-top:0"><div><h2>Información</h2><p>Datos generales del viaje.</p></div><button class="ghost-btn" data-action="edit-trip">Editar</button></div>
-        <div class="info-list"><div class="info-item"><h4>Viajeros</h4><p>${esc(trip.travelers || "Sin indicar")}</p></div><div class="info-item"><h4>Notas</h4><p>${nl2br(trip.notes || "Sin notas")}</p></div></div>
-      </section>
-      <section class="panel"><div class="section-heading" style="margin-top:0"><div><h2>Alojamiento</h2></div></div>${renderInfoItems(trip.info.accommodation)}</section>
-      <section class="panel"><div class="section-heading" style="margin-top:0"><div><h2>Transporte</h2></div></div>${renderInfoItems(trip.info.transport)}</section>
-      <section class="panel"><div class="section-heading" style="margin-top:0"><div><h2>Práctico</h2></div></div><div class="info-list">${trip.info.practical.map(item => `<div class="info-item"><p>✓ ${esc(item)}</p></div>`).join("") || '<p>Sin información práctica.</p>'}</div></section>
-      <section class="panel"><div class="section-heading" style="margin-top:0"><div><h2>Enlaces</h2></div></div><div class="link-list">${trip.info.links.map(link => `<a href="${safeUrl(link.url)}" target="_blank" rel="noopener">${esc(link.label)} <span>↗</span></a>`).join("") || '<p>Sin enlaces.</p>'}</div></section>
-      <section class="panel"><div class="section-heading" style="margin-top:0"><div><h2>Presupuesto</h2><p>Resumen por día.</p></div></div>${renderBudgetByDay(trip)}</section>
-    </div>`;
-  }
-
-  function renderInfoItems(items) {
-    return `<div class="info-list">${items.map(item => `<div class="info-item"><h4>${esc(item.name)}</h4><p>${esc(item.detail)}</p><div class="detail-top" style="margin-top:8px"><span class="status-badge ${slug(item.status)}">${esc(item.status)}</span>${item.mapQuery ? `<a href="${mapLink(item.mapQuery)}" target="_blank" rel="noopener">Ver mapa ↗</a>` : ""}</div></div>`).join("") || '<p>Sin datos.</p>'}</div>`;
-  }
-
-  function renderBudgetByDay(trip) {
-    return `<div class="info-list">${datesForTrip(trip).map(date => {
-      const activities = trip.activities.filter(a => a.date === date);
-      const estimated = sum(activities, "estimated");
-      const spent = sum(activities, "spent");
-      return `<div class="info-item"><h4>${formatDate(date)}</h4><p>Estimado: <strong>${money(estimated, trip.currency)}</strong> · Gastado: <strong>${money(spent, trip.currency)}</strong></p></div>`;
-    }).join("")}</div>`;
-  }
-
-  function renderSchedule(trip) {
-    return `<section class="section-heading"><div><h2>Horario</h2><p>Toca una actividad para ver todos sus detalles.</p></div></section>
-      ${datesForTrip(trip).map(date => renderDay(trip, date)).join("")}`;
-  }
-
-  function renderDay(trip, date) {
-    const activities = trip.activities.filter(a => a.date === date);
-    return `<section class="day"><div class="day-head"><div><h2>${formatDate(date)}</h2><p>${activities.length} ${activities.length === 1 ? "actividad" : "actividades"} · ${money(sum(activities,"estimated"),trip.currency)} estimado · ${money(sum(activities,"spent"),trip.currency)} gastado</p></div><button class="secondary-btn" data-action="edit-day" data-date="${date}">Tabla</button></div>
-      <div class="activities">${activities.map(activity => renderActivity(activity, trip.currency)).join("") || '<div class="empty-state">Día libre. Añade una actividad cuando quieras.</div>'}</div></section>`;
-  }
-
-  function renderActivity(activity, currency) {
-    const category = CATEGORIES[activity.category] || CATEGORIES.Otro;
-    const expanded = state.expanded.has(activity.id);
-    return `<article class="activity category-${category.className} ${activity.completed ? "completed" : ""} ${expanded ? "expanded" : ""}" data-activity-id="${attr(activity.id)}">
-      <div class="activity-summary">
-        <button class="complete-check" data-action="toggle-complete" data-id="${attr(activity.id)}" aria-label="${activity.completed ? "Marcar como pendiente" : "Marcar como completada"}">${activity.completed ? "✓" : ""}</button>
-        <button data-action="toggle-activity" data-id="${attr(activity.id)}" style="display:block;width:100%;padding:0;border:0;background:transparent;text-align:left;min-width:0">
-          <span class="activity-main"><span class="activity-line"><span class="activity-time">${esc(activity.time || "--:--")}</span><span class="activity-title">${category.icon} ${esc(activity.title)}</span></span><span class="activity-subline">${esc(activity.location || activity.category)}</span></span>
-        </button>
-        <button class="expand-btn" data-action="toggle-activity" data-id="${attr(activity.id)}" aria-label="${expanded ? "Contraer" : "Expandir"}">${expanded ? "⌃" : "⌄"}</button>
-      </div>
-      <div class="activity-details">
-        <div class="detail-top"><span class="category-badge">${category.icon} ${esc(activity.category)}</span><span class="status-badge ${slug(activity.status)}">${esc(activity.status)}</span></div>
-        ${activity.notes ? `<p>${nl2br(activity.notes)}</p>` : ""}
-        <div class="budget-line"><div class="budget-pill"><span>Estimado</span><strong>${money(activity.estimated,currency)}</strong></div><div class="budget-pill"><span>Gastado</span><strong>${money(activity.spent,currency)}</strong></div></div>
-        ${activity.image?.src ? `<img class="activity-image" src="${safeSrc(activity.image.src)}" alt="${esc(activity.image.alt || activity.title)}" loading="lazy">` : ""}
-        <div class="activity-actions">${activity.mapQuery ? `<a href="${mapLink(activity.mapQuery)}" target="_blank" rel="noopener">📍 Google Maps</a>` : ""}${activity.links.map(link => `<a href="${safeUrl(link.url)}" target="_blank" rel="noopener">${esc(link.label)} ↗</a>`).join("")}<button data-action="edit-activity" data-id="${attr(activity.id)}">✏️ Editar</button><button data-action="delete-activity" data-id="${attr(activity.id)}">🗑️ Eliminar</button></div>
-      </div>
-    </article>`;
-  }
-
-  function renderMap(trip) {
-    const places = trip.activities.filter(a => a.mapQuery).filter((activity, index, all) => all.findIndex(x => x.mapQuery === activity.mapQuery) === index);
-    const query = places[0]?.mapQuery || trip.destination;
-    return `<section class="section-heading"><div><h2>Mapa</h2><p>Mapa incrustado sin clave y enlaces directos a Google Maps.</p></div></section>
-      <div class="map-wrap"><iframe class="map-frame" title="Mapa de ${esc(trip.destination)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${mapEmbed(query)}"></iframe>
-      <div class="map-list">${places.map(activity => `<a class="map-place" href="${mapLink(activity.mapQuery)}" target="_blank" rel="noopener"><span>${CATEGORIES[activity.category]?.icon || "📍"}</span><span><strong>${esc(activity.title)}</strong><small>${esc(activity.location)}</small></span></a>`).join("")}</div></div>`;
-  }
-
-  function renderModal() {
-    if (!state.modal) return "";
-    if (state.modal.type === "activity") return activityModal(state.modal.activity);
-    if (state.modal.type === "day") return dayTableModal(state.modal.date);
-    if (state.modal.type === "trip") return tripEditModal();
-    if (state.modal.type === "settings") return settingsModal();
-    return "";
-  }
-
-  function modalShell(title, body, wide = false) {
-    return `<div class="modal-backdrop" data-action="close-modal"><section class="modal ${wide ? "modal-wide" : ""}" role="dialog" aria-modal="true" aria-label="${attr(title)}" data-modal-body><div class="modal-head"><h2>${esc(title)}</h2><button class="icon-btn" data-action="close-modal" aria-label="Cerrar">×</button></div>${body}</section></div>`;
-  }
-
-  function activityModal(activity) {
-    const trip = currentTrip();
-    const isNew = !activity?.id;
-    const a = { id: "", date: trip.startDate, time: "09:00", endTime: "10:00", title: "", category: "Otro", location: "", mapQuery: "", status: "Pendiente", notes: "", links: [], estimated: 0, spent: 0, completed: false, image: null, ...(activity || {}) };
-    const linksText = a.links.map(link => `${link.label}|${link.url}`).join("\n");
-    return modalShell(isNew ? "Añadir actividad" : "Editar actividad", `<form data-form="activity" class="modal-grid cols-2">
-      <input type="hidden" name="id" value="${attr(a.id)}">
-      <div class="field"><label>Fecha</label><input name="date" type="date" min="${trip.startDate}" max="${trip.endDate}" required value="${attr(a.date)}"></div>
-      <div class="field"><label>Categoría</label><select name="category">${Object.keys(CATEGORIES).map(name => `<option ${name === a.category ? "selected" : ""}>${name}</option>`).join("")}</select></div>
-      <div class="field"><label>Hora de inicio</label><input name="time" type="time" required value="${attr(a.time)}"></div>
-      <div class="field"><label>Hora de fin</label><input name="endTime" type="time" value="${attr(a.endTime || "")}"></div>
-      <div class="field span-2"><label>Título</label><input name="title" required value="${attr(a.title)}"></div>
-      <div class="field"><label>Lugar</label><input name="location" value="${attr(a.location || "")}"></div>
-      <div class="field"><label>Búsqueda para Google Maps</label><input name="mapQuery" value="${attr(a.mapQuery || "")}" placeholder="Museo, dirección o coordenadas"></div>
-      <div class="field"><label>Estado</label><select name="status">${STATUSES.map(status => `<option ${status === a.status ? "selected" : ""}>${status}</option>`).join("")}</select></div>
-      <div class="field"><label>Completada</label><select name="completed"><option value="false" ${!a.completed ? "selected" : ""}>No</option><option value="true" ${a.completed ? "selected" : ""}>Sí</option></select></div>
-      <div class="field"><label>Presupuesto estimado (${trip.currency})</label><input name="estimated" type="number" min="0" step="0.01" value="${a.estimated}"></div>
-      <div class="field"><label>Gastado (${trip.currency})</label><input name="spent" type="number" min="0" step="0.01" value="${a.spent}"></div>
-      <div class="field span-2"><label>Notas</label><textarea name="notes">${esc(a.notes || "")}</textarea></div>
-      <div class="field span-2"><label>Enlaces (uno por línea: etiqueta|URL)</label><textarea name="links">${esc(linksText)}</textarea></div>
-      <div class="field"><label>Tipo de imagen</label><select name="imageType"><option value="url" ${a.image?.type !== "local" ? "selected" : ""}>URL</option><option value="local" ${a.image?.type === "local" ? "selected" : ""}>Local</option></select></div>
-      <div class="field"><label>Imagen por URL o ruta local</label><input id="activity-image-src" name="imageSrc" value="${attr(a.image?.src || "")}" placeholder="https://… o assets/img/foto.jpg"></div>
-      <div class="field span-2"><label>O seleccionar imagen local</label><input type="file" accept="image/*" data-image-target="activity-image-src"><small>La imagen se guarda en este dispositivo como parte del viaje.</small></div>
-      <div class="span-2 btn-row"><button type="button" class="secondary-btn" data-action="close-modal">Cancelar</button><button type="submit" class="primary-btn">${isNew ? "Añadir" : "Guardar"}</button></div>
-    </form>`);
-  }
-
-  function dayTableModal(date) {
-    const trip = currentTrip();
-    const activities = trip.activities.filter(a => a.date === date);
-    const rows = activities.map(a => `<tr data-row-id="${attr(a.id)}">
-      <td><input class="mini" name="time" type="time" value="${attr(a.time)}"></td>
-      <td><input name="title" value="${attr(a.title)}"></td>
-      <td><select name="category">${Object.keys(CATEGORIES).map(c => `<option ${c === a.category ? "selected" : ""}>${c}</option>`).join("")}</select></td>
-      <td><input name="location" value="${attr(a.location || "")}"></td>
-      <td><select name="status">${STATUSES.map(s => `<option ${s === a.status ? "selected" : ""}>${s}</option>`).join("")}</select></td>
-      <td><input class="mini" name="estimated" type="number" min="0" step=".01" value="${a.estimated}"></td>
-      <td><input class="mini" name="spent" type="number" min="0" step=".01" value="${a.spent}"></td>
-      <td><select name="completed"><option value="false" ${!a.completed ? "selected" : ""}>No</option><option value="true" ${a.completed ? "selected" : ""}>Sí</option></select></td>
-    </tr>`).join("");
-    return modalShell(`Editar ${formatDate(date)}`, `<form data-form="day-table"><input type="hidden" name="date" value="${date}"><div class="table-scroll"><table class="edit-table"><thead><tr><th>Hora</th><th>Actividad</th><th>Categoría</th><th>Lugar</th><th>Estado</th><th>Estimado</th><th>Gastado</th><th>Hecha</th></tr></thead><tbody>${rows}</tbody></table></div><div class="btn-row" style="margin-top:14px"><button type="button" class="secondary-btn" data-action="add-activity-date" data-date="${date}">＋ Añadir</button><button class="primary-btn" type="submit">Guardar tabla</button></div></form>`, true);
-  }
-
-  function tripEditModal() {
-    const trip = currentTrip();
-    return modalShell("Editar viaje", `<form data-form="trip" class="modal-grid cols-2">
-      <div class="field"><label>Nombre</label><input name="name" required value="${attr(trip.name)}"></div>
-      <div class="field"><label>Destino</label><input name="destination" required value="${attr(trip.destination)}"></div>
-      <div class="field"><label>Inicio</label><input name="startDate" type="date" required value="${trip.startDate}"></div>
-      <div class="field"><label>Fin</label><input name="endDate" type="date" required value="${trip.endDate}"></div>
-      <div class="field"><label>Moneda</label><input name="currency" maxlength="3" required value="${attr(trip.currency)}" placeholder="EUR"></div>
-      <div class="field"><label>Viajeros</label><input name="travelers" value="${attr(trip.travelers)}"></div>
-      <div class="field span-2"><label>Resumen</label><textarea name="summary">${esc(trip.summary)}</textarea></div>
-      <div class="field span-2"><label>Notas generales</label><textarea name="notes">${esc(trip.notes)}</textarea></div>
-      <div class="field span-2"><label>Imagen de portada (URL o ruta local)</label><input id="trip-cover-src" name="coverImage" value="${attr(trip.coverImage)}"></div>
-      <div class="field span-2"><label>O seleccionar imagen local</label><input type="file" accept="image/*" data-image-target="trip-cover-src"></div>
-      <div class="span-2 btn-row"><button type="button" class="secondary-btn" data-action="close-modal">Cancelar</button><button type="submit" class="primary-btn">Guardar</button></div>
-    </form>`);
-  }
-
-  function settingsModal() {
-    const trip = currentTrip();
-    return modalShell("Configuración", `<div class="settings-list">
-      <div class="setting"><h3>Datos</h3><p>Importa o exporta copias completas en JSON. La importación conserva los viajes publicados y sustituye viajes con el mismo identificador.</p><div class="btn-row"><button class="secondary-btn" data-action="import">Importar JSON</button><button class="secondary-btn" data-action="export-all">Exportar todo</button>${trip ? '<button class="secondary-btn" data-action="export-trip">Exportar este viaje</button>' : ""}</div></div>
-      <div class="setting"><h3>Moneda predeterminada</h3><p>Se aplicará al crear nuevos viajes.</p><form data-form="default-currency" class="btn-row"><input aria-label="Código de moneda" name="currency" maxlength="3" value="${attr(state.settings.defaultCurrency || "EUR")}" style="min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:12px"><button class="primary-btn">Guardar</button></form></div>
-      ${trip && state.published.has(trip.id) ? '<div class="setting"><h3>Versión publicada</h3><p>La versión local tiene prioridad. Restaurar elimina los cambios locales de este viaje y vuelve al JSON publicado.</p><button class="danger-btn" data-action="restore-published">Restaurar versión publicada</button></div>' : ""}
-      ${trip ? '<div class="setting"><h3>Eliminar viaje</h3><p>Elimina la copia local de este viaje. Un viaje publicado reaparecerá en su versión original al recargar.</p><button class="danger-btn" data-action="delete-trip">Eliminar</button></div>' : ""}
-      <div class="setting"><h3>Instalación</h3><p>WanderLog ${APP_VERSION} puede instalarse y conserva una caché básica para funcionar sin conexión.</p>${state.deferredInstall ? '<button class="primary-btn" data-action="install">Instalar aplicación</button>' : '<p><strong>Usa “Añadir a pantalla de inicio” en el menú del navegador si la opción está disponible.</strong></p>'}</div>
-    </div>`);
-  }
-
-  function handleClick(event) {
-    const actionElement = event.target.closest("[data-action]");
-    if (!actionElement) return;
-    const action = actionElement.dataset.action;
-    if (action === "close-modal" && event.target.closest("[data-modal-body]") && !event.target.closest("button[data-action='close-modal']")) return;
-
-    if (action === "home") location.hash = "";
-    if (action === "open-trip") location.hash = `#viaje/${encodeURIComponent(actionElement.dataset.id)}?vista=info`;
-    if (action === "set-view") {
-      state.view = actionElement.dataset.view;
-      location.hash = `#viaje/${encodeURIComponent(state.currentTripId)}?vista=${state.view}`;
-      render();
-    }
-    if (action === "settings") { state.modal = { type: "settings" }; render(); }
-    if (action === "close-modal") { state.modal = null; render(); }
-    if (action === "add-activity") { state.modal = { type: "activity", activity: null }; render(); }
-    if (action === "add-activity-date") { state.modal = { type: "activity", activity: { date: actionElement.dataset.date } }; render(); }
-    if (action === "edit-activity") {
-      const activity = currentTrip().activities.find(a => a.id === actionElement.dataset.id);
-      state.modal = { type: "activity", activity: clone(activity) }; render();
-    }
-    if (action === "toggle-activity") {
-      const id = actionElement.dataset.id;
-      state.expanded.has(id) ? state.expanded.delete(id) : state.expanded.add(id);
-      render();
-    }
-    if (action === "toggle-complete") {
-      const activity = currentTrip().activities.find(a => a.id === actionElement.dataset.id);
-      activity.completed = !activity.completed; saveCurrent(); render();
-    }
-    if (action === "delete-activity") {
-      if (confirm("¿Eliminar esta actividad?")) {
-        const trip = currentTrip();
-        trip.activities = trip.activities.filter(a => a.id !== actionElement.dataset.id);
-        saveCurrent(); render(); toast("Actividad eliminada");
-      }
-    }
-    if (action === "edit-day") { state.modal = { type: "day", date: actionElement.dataset.date }; render(); }
-    if (action === "edit-trip") { state.modal = { type: "trip" }; render(); }
-    if (action === "import") { importInput.value = ""; importInput.click(); }
-    if (action === "export-all") exportData({ wanderlogExport: 1, exportedAt: new Date().toISOString(), trips: [...state.trips.values()] }, "wanderlog-todos-los-viajes.json");
-    if (action === "export-trip") exportData(currentTrip(), `${slug(currentTrip().name)}.json`);
-    if (action === "restore-published") restorePublished();
-    if (action === "delete-trip") deleteCurrentTrip();
-    if (action === "install") installApp();
-  }
-
-  function handleSubmit(event) {
-    const form = event.target.closest("form[data-form]");
-    if (!form) return;
-    event.preventDefault();
-    const data = Object.fromEntries(new FormData(form).entries());
-
-    if (form.dataset.form === "new-trip") {
-      if (data.endDate < data.startDate) return toast("La fecha final no puede ser anterior a la inicial");
-      const id = uniqueTripId(slug(data.name));
-      const trip = normalizeTrip({ id, name: data.name.trim(), destination: data.destination.trim(), startDate: data.startDate, endDate: data.endDate, currency: state.settings.defaultCurrency || "EUR", coverImage: data.coverImage.trim() || "assets/icons/icon.svg", summary: "", travelers: "", notes: "", info: { accommodation: [], transport: [], practical: [], links: [] }, activities: [] });
-      state.trips.set(id, trip); addCustomId(id); saveTrip(trip); syncCatalog(); toast("Viaje creado"); location.hash = `#viaje/${encodeURIComponent(id)}?vista=info`; return;
-    }
-
-    if (form.dataset.form === "activity") {
-      const trip = currentTrip();
-      const existing = trip.activities.find(a => a.id === data.id);
-      const fallbackDate = state.modal?.activity?.date || trip.startDate;
-      const activity = normalizeActivity({
-        id: data.id || uid("act"), date: data.date || fallbackDate, time: data.time, endTime: data.endTime, title: data.title.trim(), category: data.category, location: data.location.trim(), mapQuery: data.mapQuery.trim(), status: data.status, completed: data.completed === "true", notes: data.notes.trim(), links: parseLinks(data.links), estimated: Number(data.estimated) || 0, spent: Number(data.spent) || 0, image: data.imageSrc.trim() ? { type: data.imageType, src: data.imageSrc.trim(), alt: data.title.trim() } : null
-      });
-      if (existing) Object.assign(existing, activity); else trip.activities.push(activity);
-      sortActivities(trip); saveCurrent(); state.modal = null; state.expanded.add(activity.id); render(); toast(existing ? "Actividad actualizada" : "Actividad añadida"); return;
-    }
-
-    if (form.dataset.form === "day-table") {
-      const trip = currentTrip();
-      form.querySelectorAll("tbody tr").forEach(row => {
-        const activity = trip.activities.find(a => a.id === row.dataset.rowId);
-        if (!activity) return;
-        row.querySelectorAll("input,select").forEach(input => {
-          if (["estimated", "spent"].includes(input.name)) activity[input.name] = Number(input.value) || 0;
-          else if (input.name === "completed") activity.completed = input.value === "true";
-          else activity[input.name] = input.value;
-        });
-      });
-      sortActivities(trip); saveCurrent(); state.modal = null; render(); toast("Día actualizado y ordenado por hora"); return;
-    }
-
-    if (form.dataset.form === "trip") {
-      const trip = currentTrip();
-      if (data.endDate < data.startDate) return toast("La fecha final no puede ser anterior a la inicial");
-      Object.assign(trip, { name: data.name.trim(), destination: data.destination.trim(), startDate: data.startDate, endDate: data.endDate, currency: data.currency.trim().toUpperCase(), travelers: data.travelers.trim(), summary: data.summary.trim(), notes: data.notes.trim(), coverImage: data.coverImage.trim() || "assets/icons/icon.svg" });
-      sortActivities(trip); saveCurrent(); syncCatalog(); state.modal = null; render(); toast("Viaje actualizado"); return;
-    }
-
-    if (form.dataset.form === "default-currency") {
-      state.settings.defaultCurrency = data.currency.trim().toUpperCase() || "EUR";
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings));
-      toast("Moneda predeterminada guardada"); render();
-    }
-  }
-
-  function handleChange(event) {
-    const input = event.target.closest("input[data-image-target]");
-    if (!input || !input.files?.[0]) return;
-    const file = input.files[0];
-    if (file.size > 2_500_000) return toast("La imagen es demasiado grande. Usa una de menos de 2,5 MB.");
-    const reader = new FileReader();
-    reader.onload = () => {
-      const target = document.getElementById(input.dataset.imageTarget);
-      if (target) target.value = reader.result;
-      toast("Imagen local preparada");
-    };
-    reader.readAsDataURL(file);
-  }
-
-  async function importJSONFile() {
-    const file = importInput.files?.[0];
-    if (!file) return;
-    try {
-      const payload = JSON.parse(await file.text());
-      const trips = Array.isArray(payload.trips) ? payload.trips : [payload];
-      if (!trips.length || trips.some(trip => !trip.id || !trip.name || !trip.startDate || !trip.endDate)) throw new Error("Formato no reconocido");
-      trips.forEach(raw => {
-        const trip = normalizeTrip(raw);
-        state.trips.set(trip.id, trip);
-        saveTrip(trip);
-        if (!state.published.has(trip.id)) addCustomId(trip.id);
-      });
-      syncCatalog(); state.modal = null; render(); toast(`${trips.length} ${trips.length === 1 ? "viaje importado" : "viajes importados"}`);
-    } catch (error) {
-      console.error(error); toast("No se pudo importar: JSON no válido");
-    }
-  }
-
-  function restorePublished() {
-    const trip = currentTrip();
-    const published = state.published.get(trip.id);
-    if (!published || !confirm("¿Restaurar la versión publicada? Se perderán los cambios locales de este viaje.")) return;
-    localStorage.removeItem(STORAGE_PREFIX + trip.id);
-    state.trips.set(trip.id, clone(published));
-    state.modal = null; syncCatalog(); render(); toast("Versión publicada restaurada");
-  }
-
-  function deleteCurrentTrip() {
-    const trip = currentTrip();
-    if (!confirm(`¿Eliminar “${trip.name}” de este dispositivo?`)) return;
-    localStorage.removeItem(STORAGE_PREFIX + trip.id);
-    const custom = loadJSON(CUSTOM_KEY, []).filter(id => id !== trip.id);
-    localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom));
-    state.trips.delete(trip.id);
-    if (state.published.has(trip.id)) state.trips.set(trip.id, clone(state.published.get(trip.id)));
-    syncCatalog(); state.modal = null; location.hash = ""; toast("Viaje eliminado");
-  }
-
-  async function installApp() {
-    if (!state.deferredInstall) return;
-    state.deferredInstall.prompt();
-    await state.deferredInstall.userChoice;
-    state.deferredInstall = null;
-    render();
-  }
-
-  function saveCurrent() { saveTrip(currentTrip()); syncCatalog(); }
-  function saveTrip(trip) {
-    try { localStorage.setItem(STORAGE_PREFIX + trip.id, JSON.stringify(trip)); }
-    catch (error) { console.error(error); toast("No se pudo guardar. Reduce el tamaño de las imágenes locales."); }
-  }
-  function addCustomId(id) {
-    const ids = loadJSON(CUSTOM_KEY, []);
-    if (!ids.includes(id)) { ids.push(id); localStorage.setItem(CUSTOM_KEY, JSON.stringify(ids)); }
-  }
-
-  function exportData(data, filename) {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url; anchor.download = filename; anchor.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    toast("JSON exportado");
-  }
-
-  function normalizeActivity(activity) {
-    activity.category = CATEGORIES[activity.category] ? activity.category : "Otro";
-    activity.status = STATUSES.includes(activity.status) ? activity.status : "Pendiente";
-    activity.links = Array.isArray(activity.links) ? activity.links : [];
-    return activity;
-  }
-  function sortActivities(trip) { trip.activities.sort((a, b) => `${a.date || ""} ${a.time || "99:99"}`.localeCompare(`${b.date || ""} ${b.time || "99:99"}`)); }
-  function currentTrip() { return state.trips.get(state.currentTripId); }
-  function totalActivities() { return [...state.trips.values()].reduce((n, trip) => n + trip.activities.length, 0); }
-  function completedActivities() { return [...state.trips.values()].reduce((n, trip) => n + trip.activities.filter(a => a.completed).length, 0); }
-  function tripBudget(trip) { return { estimated: sum(trip.activities, "estimated"), spent: sum(trip.activities, "spent") }; }
-  function sum(items, key) { return items.reduce((total, item) => total + (Number(item[key]) || 0), 0); }
-
-  function datesForTrip(trip) {
-    const dates = [];
-    const start = new Date(`${trip.startDate}T12:00:00`);
-    const end = new Date(`${trip.endDate}T12:00:00`);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return [...new Set(trip.activities.map(a => a.date))].sort();
-    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) dates.push(localISO(date));
-    return dates;
-  }
-  function dayCount(start, end) {
-    const a = new Date(`${start}T12:00:00`), b = new Date(`${end}T12:00:00`);
-    return Math.max(1, Math.round((b - a) / 86400000) + 1);
-  }
-  function localISO(date) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`; }
-  function formatDate(date) { return new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${date}T12:00:00`)).replace(/^./, c => c.toUpperCase()); }
-  function formatRange(start, end) {
-    if (!start || !end) return "Fechas por confirmar";
-    const fmt = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", year: "numeric" });
-    return `${fmt.format(new Date(`${start}T12:00:00`))} – ${fmt.format(new Date(`${end}T12:00:00`))}`;
-  }
-  function money(value, currency) {
-    try { return new Intl.NumberFormat("es-ES", { style: "currency", currency: currency || "EUR", maximumFractionDigits: 2 }).format(Number(value) || 0); }
-    catch { return `${(Number(value) || 0).toFixed(2)} ${currency || "EUR"}`; }
-  }
-  function parseLinks(text) {
-    return String(text || "").split(/\n+/).map(line => line.trim()).filter(Boolean).map(line => {
-      const separator = line.indexOf("|");
-      return separator > -1 ? { label: line.slice(0, separator).trim() || "Enlace", url: line.slice(separator + 1).trim() } : { label: "Enlace", url: line };
-    }).filter(link => safeUrl(link.url) !== "#");
-  }
-  function mapLink(query) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`; }
-  function mapEmbed(query) { return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`; }
-  function safeUrl(url) { try { const parsed = new URL(url, location.href); return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : "#"; } catch { return "#"; } }
-  function safeSrc(src) { if (!src) return "assets/icons/icon.svg"; if (/^data:image\//.test(src)) return src; try { const parsed = new URL(src, location.href); return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : "assets/icons/icon.svg"; } catch { return "assets/icons/icon.svg"; } }
-  function esc(value) { return String(value ?? "").replace(/[&<>'"]/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" }[char])); }
-  function attr(value) { return esc(value); }
-  function nl2br(value) { return esc(value).replace(/\n/g, "<br>"); }
-  function slug(value) { return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "viaje"; }
-  function uid(prefix) { return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`; }
-  function uniqueTripId(base) { let id = base || "viaje"; let index = 2; while (state.trips.has(id)) id = `${base}-${index++}`; return id; }
-  function clone(value) { return JSON.parse(JSON.stringify(value)); }
-  function loadJSON(key, fallback) { try { const value = localStorage.getItem(key); return value ? JSON.parse(value) : fallback; } catch { return fallback; } }
-  function toast(message) {
-    const region = document.querySelector("#toast-region");
-    if (!region) return;
-    const element = document.createElement("div"); element.className = "toast"; element.textContent = message; region.appendChild(element);
-    setTimeout(() => element.remove(), 3200);
-  }
-  function registerServiceWorker() {
-    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(error => console.warn("Service worker", error));
-  }
+"use strict";
+const APP_VERSION="2.0.0", STORAGE_PREFIX="wanderlog.trip.", CUSTOM_KEY="wanderlog.customTrips", SETTINGS_KEY="wanderlog.settings";
+const CATEGORIES={Transporte:{icon:"🚌",className:"transporte"},Alojamiento:{icon:"🛏️",className:"alojamiento"},Cultura:{icon:"🏛️",className:"cultura"},Gastronomía:{icon:"🍽️",className:"gastronomia"},Naturaleza:{icon:"🌿",className:"naturaleza"},Otro:{icon:"📍",className:"otro"}};
+const STATUSES=["Sin reserva necesaria","Pendiente","Reservado"];
+const PRACTICAL=["transporte local","clima y equipaje","gastronomía","compras","seguridad y salud","plan alternativo","nota libre"];
+const state={catalog:[],published:new Map(),trips:new Map(),currentTripId:null,currentDayId:null,view:"info",dayView:"plan",expanded:new Set(),modal:null,deferredInstall:null,settings:loadJSON(SETTINGS_KEY,{defaultCurrency:"EUR"}),online:navigator.onLine};
+const app=document.querySelector("#app"),importInput=document.querySelector("#json-import");
+document.addEventListener("DOMContentLoaded",init);
+async function init(){
+ addEventListener("online",()=>{state.online=true;render();toast("Conexión recuperada")});addEventListener("offline",()=>{state.online=false;render();toast("Sin conexión")});
+ addEventListener("beforeinstallprompt",e=>{e.preventDefault();state.deferredInstall=e;render()});addEventListener("hashchange",applyRoute);
+ app.addEventListener("click",handleClick);app.addEventListener("submit",handleSubmit);app.addEventListener("change",handleChange);importInput.addEventListener("change",importJSONFile);
+ await loadTrips();applyRoute();registerServiceWorker();
+}
+async function loadTrips(){
+ let catalog={trips:[]};try{const r=await fetch("data/catalog.json",{cache:"no-cache"});if(!r.ok)throw 0;catalog=await r.json()}catch{toast("Catálogo no disponible")}
+ const loaded=await Promise.all((catalog.trips||[]).map(async e=>{try{const r=await fetch(e.file,{cache:"no-cache"});return r.ok?await r.json():null}catch{return null}}));
+ loaded.filter(Boolean).forEach(raw=>{const published=normalizeTrip(raw);state.published.set(published.id,clone(published));const local=loadJSON(STORAGE_PREFIX+published.id,null);state.trips.set(published.id,local?normalizeTrip(local):clone(published))});
+ loadJSON(CUSTOM_KEY,[]).forEach(id=>{const local=loadJSON(STORAGE_PREFIX+id,null);if(local)state.trips.set(id,normalizeTrip(local))});syncCatalog();
+}
+function normalizeTrip(t){
+ if(!t||typeof t!=="object")throw Error("Viaje no válido");
+ t.schemaVersion=2;t.id||=uid("viaje");t.name||="Viaje";t.destination||="";t.icon||=destinationIcon(t.destination);t.currency=(t.currency||state.settings.defaultCurrency||"EUR").toUpperCase();
+ if(!Array.isArray(t.days)||!t.days.length){const dates=[...new Set((t.activities||[]).map(a=>a.date).filter(Boolean))].sort();t.days=dates.map((date,i)=>({id:`day-${i+1}`,date,name:`Día ${i+1}`,accommodationId:null}));if(!t.days.length&&t.startDate)t.days=[{id:"day-1",date:t.startDate,name:"Día 1",accommodationId:null}]}
+ t.days.forEach((d,i)=>{d.id||=uid("day");d.name||=`Día ${i+1}`;d.accommodationId||=null});t.days.sort((a,b)=>a.date.localeCompare(b.date));
+ const byDate=Object.fromEntries(t.days.map(d=>[d.date,d.id]));t.activities=Array.isArray(t.activities)?t.activities:[];t.activities.forEach(a=>{a.id||=uid("act");a.dayId||=byDate[a.date]||t.days[0]?.id;a.category=CATEGORIES[a.category]?a.category:"Otro";a.status=STATUSES.includes(a.status)?a.status:"Pendiente";a.links=Array.isArray(a.links)?a.links:[];a.estimated=+a.estimated||0;a.spent=+a.spent||0;a.completed=!!a.completed;a.reservationId||=null;delete a.date;delete a.image});
+ if(!Array.isArray(t.accommodations)){t.accommodations=(t.info?.accommodation||[]).map((a,i)=>({id:`acc-${i+1}`,name:a.name||"Alojamiento",address:a.detail||"",dayIds:t.days.map(d=>d.id),status:a.status||"Pendiente",notes:a.detail||"",mapUrl:a.mapQuery?mapSearch(a.mapQuery):"",estimated:0,spent:0,reservationId:null}))}
+ t.accommodations.forEach(a=>{a.id||=uid("acc");a.dayIds=Array.isArray(a.dayIds)?a.dayIds:[];a.status=STATUSES.includes(a.status)?a.status:"Pendiente";a.estimated=+a.estimated||0;a.spent=+a.spent||0;a.reservationId||=null});
+ if(!Array.isArray(t.reservations)){t.reservations=(t.info?.transport||[]).map((r,i)=>({id:`res-${i+1}`,name:r.name||"Reserva",category:"Transporte",dayId:t.days[0]?.id,time:"",status:r.status||"Pendiente",locator:"",location:r.detail||"",mapUrl:r.mapQuery?mapSearch(r.mapQuery):"",bookingUrl:"",notes:r.detail||"",estimated:0,spent:0,activityId:null}))}
+ t.reservations.forEach(r=>{r.id||=uid("res");r.category=CATEGORIES[r.category]?r.category:"Otro";r.status=STATUSES.includes(r.status)?r.status:"Pendiente";r.estimated=+r.estimated||0;r.spent=+r.spent||0;r.activityId||=null});
+ if(!t.practical||Array.isArray(t.practical)){const old=Array.isArray(t.practical)?t.practical:(t.info?.practical||[]);t.practical=Object.fromEntries(PRACTICAL.map((k,i)=>[k,old[i]||""]))}PRACTICAL.forEach(k=>t.practical[k]??="");
+ t.links=Array.isArray(t.links)?t.links:Array.isArray(t.info?.links)?t.info.links:[];delete t.info;delete t.coverImage;delete t.summary;delete t.travelers;delete t.notes;
+ t.startDate=t.days[0]?.date||t.startDate;t.endDate=t.days.at(-1)?.date||t.endDate;sortActivities(t);return t;
+}
+function syncCatalog(){state.catalog=[...state.trips.values()].sort((a,b)=>(a.startDate||"").localeCompare(b.startDate||""))}
+function applyRoute(){const m=location.hash.match(/^#viaje\/([^/?]+)/);if(m&&state.trips.has(decodeURIComponent(m[1]))){state.currentTripId=decodeURIComponent(m[1]);const p=new URLSearchParams(location.hash.split("?")[1]||"");state.view=["info","horario"].includes(p.get("vista"))?p.get("vista"):"info";const t=currentTrip();if(!t.days.some(d=>d.id===state.currentDayId))state.currentDayId=t.days[0]?.id||null}else state.currentTripId=null;state.modal=null;render()}
+function render(){app.innerHTML=`${state.online?"":'<div class="offline-banner">Sin conexión</div>'}${state.currentTripId?renderTrip():renderHome()}${renderModal()}`}
+function topbar(title="",sub=""){return `<header class="topbar"><div class="topbar-inner">${state.currentTripId?iconButton("home","←","Mis viajes"):`<a class="brand" href="#"><img class="brand-logo" src="assets/icons/icon.svg" alt=""><span>WanderLog</span></a>`}${state.currentTripId?`<div class="topbar-title"><strong>${esc(title)}</strong><small>${esc(sub)}</small></div>`:'<div style="flex:1"></div>'}${iconButton("settings","⚙️","Configuración")}</div></header>`}
+function iconButton(action,icon,label,extra=""){return `<button class="icon-btn" data-action="${action}" ${extra} aria-label="${attr(label)}" title="${attr(label)}">${icon}</button>`}
+function renderHome(){return `${topbar()}<main class="page"><div class="title-row"><h1>Mis viajes</h1></div><div class="icon-grid">${state.catalog.map(renderTripTile).join("")}<button class="trip-tile add-tile" data-action="new-trip"><span class="trip-icon">＋</span><span class="trip-name">Nuevo viaje</span></button></div></main>`}
+function renderTripTile(t){return `<button class="trip-tile" data-action="open-trip" data-id="${attr(t.id)}"><span class="trip-icon">${esc(t.icon)}</span><span class="trip-name">${esc(t.name)}</span><span class="trip-date">${formatHomeRange(t.startDate,t.endDate)}</span></button>`}
+function renderTrip(){const t=currentTrip();return `${topbar(`${t.icon} ${t.name}`,formatTripRange(t.startDate,t.endDate))}<nav class="tabs">${mainTab("info","ℹ️ Info")}${mainTab("horario","🗓️ Horario")}</nav><main class="page">${state.view==="info"?renderInfo(t):renderSchedule(t)}</main>`}
+function mainTab(view,label){return `<button data-action="set-view" data-view="${view}" class="${state.view===view?"active":""}">${label}</button>`}
+function renderInfo(t){const b=budget(t);return `<div class="stats"><div class="stat"><span>Días</span><strong>${t.days.length}</strong></div><div class="stat"><span>Estimado</span><strong>${money(b.estimated,t.currency)}</strong></div><div class="stat"><span>Gastado</span><strong>${money(b.spent,t.currency)}</strong></div></div><div class="info-columns"><div>${infoSection("🛏️","Alojamientos","add-accommodation",renderAccommodations(t))}${infoSection("🎟️","Reservas","add-reservation",renderReservations(t))}</div><div>${infoSection("🧭","Práctico",null,renderPractical(t))}${infoSection("🔗","Enlaces","add-link",renderLinks(t))}</div></div>${renderBudget(t)}`}
+function infoSection(icon,title,addAction,body){return `<section class="section"><div class="section-head"><span>${icon}</span><h2>${title}</h2>${addAction?`<button class="mini-btn" data-action="${addAction}" aria-label="Añadir" title="Añadir">＋</button>`:""}</div><div class="section-body">${body}</div></section>`}
+function renderAccommodations(t){return `<div class="compact-list">${t.accommodations.map(a=>`<article class="compact-card"><div class="compact-card-head"><span>🛏️</span><strong>${esc(a.name)}</strong><button class="mini-btn" data-action="edit-accommodation" data-id="${a.id}" aria-label="Editar" title="Editar">✏️</button></div><p>${esc(a.address)}</p><div class="meta"><span class="badge ${slug(a.status)}">${esc(a.status)}</span><span>${money(a.spent,t.currency)}</span></div><div class="link-row">${a.mapUrl?`<a href="${safeUrl(a.mapUrl)}" target="_blank" rel="noopener">📍 Mapa</a>`:""}</div></article>`).join("")||'<div class="empty">Sin alojamientos</div>'}</div>`}
+function renderReservations(t){return `<div class="compact-list">${t.reservations.map(r=>`<details class="details-block"><summary><span>${CATEGORIES[r.category].icon} ${esc(r.name)}</span><span class="badge ${slug(r.status)}">${esc(r.status)}</span><button class="mini-btn" data-action="edit-reservation" data-id="${r.id}" aria-label="Editar" title="Editar">✏️</button></summary><div class="details-content">${esc([r.locator&&`Localizador: ${r.locator}`,r.location,r.notes].filter(Boolean).join("\n"))}<div class="money-pair"><span>Estimado ${money(r.estimated,t.currency)}</span><span>Gastado ${money(r.spent,t.currency)}</span></div><div class="link-row">${r.mapUrl?`<a href="${safeUrl(r.mapUrl)}" target="_blank" rel="noopener">📍 Mapa</a>`:""}${r.bookingUrl?`<a href="${safeUrl(r.bookingUrl)}" target="_blank" rel="noopener">🔗 Reserva</a>`:""}</div></div></details>`).join("")||'<div class="empty">Sin reservas</div>'}</div>`}
+function renderPractical(t){return PRACTICAL.map(k=>`<details class="details-block"><summary><span>${practicalIcon(k)} ${titleCase(k)}</span><button class="mini-btn" data-action="edit-practical" data-key="${attr(k)}" aria-label="Editar" title="Editar">✏️</button></summary><div class="details-content">${esc(t.practical[k]||"Sin notas")}</div></details>`).join("")}
+function renderLinks(t){return `<div class="compact-list">${t.links.map(l=>`<div class="compact-card"><div class="compact-card-head"><span>🔗</span><strong>${esc(l.label)}</strong><a href="${safeUrl(l.url)}" target="_blank" rel="noopener" aria-label="Abrir">↗</a><button class="mini-btn" data-action="edit-link" data-id="${l.id||""}" data-index="${t.links.indexOf(l)}" aria-label="Editar">✏️</button></div></div>`).join("")||'<div class="empty">Sin enlaces</div>'}</div>`}
+function renderBudget(t){const b=budget(t),max=Math.max(1,...Object.values(b.byCategory).map(x=>x.spent)),totalMax=Math.max(1,b.estimated,b.spent);return `<section class="section"><div class="section-head"><span>📊</span><h2>Presupuesto</h2></div><div class="section-body"><div class="compare"><div><span>Estimado</span><strong>${money(b.estimated,t.currency)}</strong><div class="bar-track"><div class="bar-fill" style="width:${Math.round(b.estimated/totalMax*100)}%"></div></div></div><div><span>Gastado</span><strong>${money(b.spent,t.currency)}</strong><div class="bar-track"><div class="bar-fill" style="width:${Math.round(b.spent/totalMax*100)}%;background:#f0a74b"></div></div></div></div><div class="budget-bars">${Object.entries(b.byCategory).map(([cat,x])=>`<div class="bar-row"><span>${CATEGORIES[cat].icon} ${esc(cat)}</span><div class="bar-track"><div class="bar-fill category-${CATEGORIES[cat].className}" style="width:${Math.round(x.spent/max*100)}%;background:var(--cat)"></div></div><strong>${money(x.spent,t.currency)}</strong></div>`).join("")}</div><div class="compact-list" style="margin-top:9px">${t.days.map(d=>{const x=b.byDay[d.id]||{estimated:0,spent:0};return `<div class="compact-card"><div class="compact-card-head"><strong>${formatDayDate(d.date)} · ${esc(d.name)}</strong><span>${money(x.spent,t.currency)}</span></div><div class="meta">Estimado ${money(x.estimated,t.currency)}</div></div>`}).join("")}</div></div></section>`}
+function renderSchedule(t){const d=currentDay(t);if(!d)return '<div class="empty">Sin días</div>';return `<div class="day-tabs">${t.days.map((x,i)=>`<button class="day-tab ${x.id===d.id?"active":""}" data-action="select-day" data-id="${x.id}"><strong>Día ${i+1}</strong><span>${shortDay(x.date)}</span></button>`).join("")}<button class="day-tab add" data-action="add-day" aria-label="Añadir día">＋</button></div><div class="day-bar"><div><h2>${esc(d.name)}</h2><small>${formatDayDate(d.date)}</small></div><div class="view-toggle"><button data-action="day-view" data-view="plan" class="${state.dayView==="plan"?"active":""}">Plan</button><button data-action="day-view" data-view="mapa" class="${state.dayView==="mapa"?"active":""}">Mapa</button></div>${iconButton("edit-day","✏️","Editar día",`data-id="${d.id}"`)}</div><label class="lodging-select"><span>🛏️</span><select data-action="day-accommodation" data-day-id="${d.id}"><option value="">Sin alojamiento</option>${t.accommodations.map(a=>`<option value="${a.id}" ${a.id===d.accommodationId?"selected":""}>${esc(a.name)}</option>`).join("")}</select></label>${state.dayView==="plan"?renderDayPlan(t,d):renderDayMap(t,d)}`}
+function renderDayPlan(t,d){const acts=t.activities.filter(a=>a.dayId===d.id);return `<div class="activities">${acts.map(a=>renderActivity(t,d,a)).join("")||'<div class="empty">Sin actividades</div>'}</div><div style="display:flex;justify-content:center;margin:9px"><button class="primary-btn" data-action="add-activity" data-day-id="${d.id}">＋ Actividad</button></div>`}
+function renderActivity(t,d,a){const c=CATEGORIES[a.category],open=state.expanded.has(a.id),acc=t.accommodations.find(x=>x.id===d.accommodationId);return `<article class="activity category-${c.className} ${a.completed?"completed":""} ${open?"expanded":""}"><div class="activity-line"><button class="check" data-action="toggle-complete" data-id="${a.id}" aria-label="Completar">${a.completed?"✓":""}</button><span class="cat-icon">${c.icon}</span><button class="activity-main" data-action="toggle-activity" data-id="${a.id}"><span><span class="activity-time">${esc(a.time||"--:--")}</span><span class="activity-title">${esc(a.title)}</span></span></button><span class="spent-inline">${a.spent?money(a.spent,t.currency):""}</span></div><div class="activity-detail"><div class="meta"><span class="badge ${slug(a.status)}">${esc(a.status)}</span><span>${esc(a.location||"")}</span></div>${a.notes?`<p>${nl2br(a.notes)}</p>`:""}<div class="money-pair"><span>Estimado ${money(a.estimated,t.currency)}</span><span>Gastado ${money(a.spent,t.currency)}</span></div><div class="link-row">${directionsButton(a.mapQuery||a.location,"Cómo llegar")}${acc?directionsButton(acc.mapUrl||acc.address,"Volver al alojamiento",a.mapQuery||a.location):""}${a.links.map(l=>`<a href="${safeUrl(l.url)}" target="_blank" rel="noopener">🔗 ${esc(l.label)}</a>`).join("")}<button data-action="edit-activity" data-id="${a.id}">✏️ Editar</button></div></div></article>`}
+function renderDayMap(t,d){const acts=t.activities.filter(a=>a.dayId===d.id&&(a.mapQuery||a.location));const acc=t.accommodations.find(x=>x.id===d.accommodationId);const stops=[...acts.map((a,i)=>({n:i+1,title:a.title,place:a.mapQuery||a.location,icon:CATEGORIES[a.category].icon})),...(acc?[{n:acts.length+1,title:`Volver a ${acc.name}`,place:acc.mapUrl||acc.address,icon:"🛏️"}]:[])];return `<div class="map-card"><div class="map-grid"></div>${stops.length>1?'<div class="route-line"></div>':""}<div class="route-stops">${stops.map(s=>`<div class="route-stop"><span class="marker">${s.n}</span><div class="route-label"><strong>${s.icon} ${esc(s.title)}</strong><small>${esc(stripMapUrl(s.place))}</small></div></div>`).join("")||'<div class="empty">Sin ubicaciones</div>'}</div></div><div class="route-actions">${stops.length?`<a href="${routeUrl(stops.map(s=>s.place))}" target="_blank" rel="noopener">Abrir ruta en Google Maps</a>`:""}</div><div class="compact-list" style="margin-top:8px">${acts.map((a,i)=>`<div class="compact-card"><div class="compact-card-head"><span class="marker">${i+1}</span><strong>${esc(a.title)}</strong>${directionsButton(a.mapQuery||a.location,"Cómo llegar")}</div></div>`).join("")}</div>`}
+function renderModal(){if(!state.modal)return"";const m=state.modal;if(m.type==="new-trip")return newTripModal();if(m.type==="activity")return activityModal(m.id,m.dayId);if(m.type==="day")return dayModal(m.id,m.isNew);if(m.type==="trip")return tripModal();if(m.type==="accommodation")return accommodationModal(m.id);if(m.type==="reservation")return reservationModal(m.id);if(m.type==="practical")return practicalModal(m.key);if(m.type==="link")return linkModal(m.index);if(m.type==="settings")return settingsModal();return""}
+function modal(title,body){return `<div class="modal-backdrop" data-action="close-modal"><section class="modal" data-modal-body role="dialog" aria-modal="true"><div class="modal-head"><h2>${esc(title)}</h2>${iconButton("close-modal","×","Cerrar")}</div>${body}</section></div>`}
+function newTripModal(){const today=localISO(new Date());return modal("Nuevo viaje",`<form data-form="new-trip" class="form-grid cols-2">${field("Nombre","name","text","",true)}${field("Destino","destination","text","",true)}${field("Inicio","startDate","date",today,true)}${field("Fin","endDate","date",today,true)}<div class="span-2 btn-row"><button class="secondary-btn" type="button" data-action="close-modal">Cancelar</button><button class="primary-btn">Crear</button></div></form>`)}
+function activityModal(id,dayId){const t=currentTrip(),a=t.activities.find(x=>x.id===id)||{id:"",dayId:dayId||state.currentDayId,time:"09:00",endTime:"",title:"",category:"Otro",location:"",mapQuery:"",status:"Pendiente",completed:false,notes:"",links:[],estimated:0,spent:0,reservationId:null};return modal(a.id?"Editar actividad":"Nueva actividad",`<form data-form="activity" class="form-grid cols-2"><input type="hidden" name="id" value="${attr(a.id)}">${selectField("Día","dayId",t.days.map(d=>[d.id,`${formatDayDate(d.date)} · ${d.name}`]),a.dayId)}${field("Hora","time","time",a.time,true)}<div class="span-2">${field("Título","title","text",a.title,true)}</div>${selectField("Categoría","category",Object.keys(CATEGORIES).map(x=>[x,x]),a.category)}${selectField("Estado","status",STATUSES.map(x=>[x,x]),a.status)}${field("Ubicación","location","text",a.location)}${field("Búsqueda de mapa","mapQuery","text",a.mapQuery)}${field("Estimado","estimated","number",a.estimated)}${field("Gastado","spent","number",a.spent)}${selectField("Reserva vinculada","reservationId",[["","Ninguna"],...t.reservations.map(r=>[r.id,r.name])],a.reservationId||"")}<div class="field"><label>Completada</label><select name="completed"><option value="false" ${!a.completed?"selected":""}>No</option><option value="true" ${a.completed?"selected":""}>Sí</option></select></div><div class="field span-2"><label>Notas</label><textarea name="notes">${esc(a.notes)}</textarea></div><div class="field span-2"><label>Enlaces (etiqueta|URL)</label><textarea name="links">${esc(a.links.map(l=>`${l.label}|${l.url}`).join("\n"))}</textarea></div><div class="span-2 btn-row">${a.id?'<button type="button" class="danger-btn" data-action="delete-activity" data-id="'+a.id+'">🗑️</button>':""}<button class="primary-btn">Guardar</button></div></form>`)}
+function dayModal(id,isNew=false){const t=currentTrip(),d=t.days.find(x=>x.id===id)||{id:"",date:nextDayDate(t),name:`Día ${t.days.length+1}`,accommodationId:""},acts=t.activities.filter(a=>a.dayId===d.id);return modal(isNew?"Añadir día":"Editar día",`<form data-form="day" class="form-grid"><input type="hidden" name="id" value="${attr(d.id)}">${field("Fecha","date","date",d.date,true)}${field("Nombre resumen","name","text",d.name,true)}${selectField("Alojamiento","accommodationId",[["","Sin alojamiento"],...t.accommodations.map(a=>[a.id,a.name])],d.accommodationId||"")}${d.id?`<div class="edit-rows">${acts.map(a=>editActivityRow(t,a)).join("")||'<div class="empty">Sin actividades</div>'}</div><button type="button" class="secondary-btn" data-action="add-activity" data-day-id="${d.id}">＋ Actividad</button>`:""}<div class="btn-row">${d.id?`<button type="button" class="danger-btn" data-action="delete-day" data-id="${d.id}">🗑️ Día</button>`:""}<button class="primary-btn">Guardar</button></div></form>`)}
+function editActivityRow(t,a){return `<div class="edit-row" data-row-id="${a.id}"><div class="edit-row-grid"><input name="time" type="time" value="${attr(a.time)}"><input name="title" value="${attr(a.title)}"><select name="dayId">${t.days.map(d=>`<option value="${d.id}" ${d.id===a.dayId?"selected":""}>${shortDay(d.date)}</option>`).join("")}</select><select name="status">${STATUSES.map(s=>`<option ${s===a.status?"selected":""}>${s}</option>`).join("")}</select></div><div class="row-actions"><button type="button" class="mini-btn" data-action="edit-activity" data-id="${a.id}" title="Editar">✏️</button><button type="button" class="mini-btn" data-action="duplicate-activity" data-id="${a.id}" title="Duplicar">⧉</button><button type="button" class="mini-btn" data-action="delete-activity" data-id="${a.id}" title="Eliminar">🗑️</button></div></div>`}
+function tripModal(){const t=currentTrip();return modal("Editar viaje",`<form data-form="trip" class="form-grid cols-2">${field("Nombre","name","text",t.name,true)}${field("Destino","destination","text",t.destination,true)}${field("Icono","icon","text",t.icon,true)}${field("Moneda","currency","text",t.currency,true)}<div class="span-2 btn-row"><button class="primary-btn">Guardar</button></div></form>`)}
+function accommodationModal(id){const t=currentTrip(),a=t.accommodations.find(x=>x.id===id)||{id:"",name:"",address:"",dayIds:[],status:"Pendiente",notes:"",mapUrl:"",estimated:0,spent:0,reservationId:null};return modal(a.id?"Editar alojamiento":"Nuevo alojamiento",`<form data-form="accommodation" class="form-grid cols-2"><input type="hidden" name="id" value="${a.id}">${field("Nombre","name","text",a.name,true)}${selectField("Estado","status",STATUSES.map(x=>[x,x]),a.status)}<div class="span-2">${field("Dirección","address","text",a.address)}</div><div class="field span-2"><label>Días asignados</label><select name="dayIds" multiple size="${Math.min(5,t.days.length)}">${t.days.map(d=>`<option value="${d.id}" ${a.dayIds.includes(d.id)?"selected":""}>${formatDayDate(d.date)} · ${esc(d.name)}</option>`).join("")}</select></div>${field("Mapa","mapUrl","url",a.mapUrl)}${selectField("Reserva vinculada","reservationId",[["","Ninguna"],...t.reservations.map(r=>[r.id,r.name])],a.reservationId||"")}${field("Estimado","estimated","number",a.estimated)}${field("Gastado","spent","number",a.spent)}<div class="field span-2"><label>Notas</label><textarea name="notes">${esc(a.notes)}</textarea></div><div class="span-2 btn-row">${a.id?`<button type="button" class="danger-btn" data-action="delete-accommodation" data-id="${a.id}">🗑️</button>`:""}<button class="primary-btn">Guardar</button></div></form>`)}
+function reservationModal(id){const t=currentTrip(),r=t.reservations.find(x=>x.id===id)||{id:"",name:"",category:"Transporte",dayId:t.days[0]?.id,time:"",status:"Pendiente",locator:"",location:"",mapUrl:"",bookingUrl:"",notes:"",estimated:0,spent:0,activityId:null};return modal(r.id?"Editar reserva":"Nueva reserva",`<form data-form="reservation" class="form-grid cols-2"><input type="hidden" name="id" value="${r.id}">${field("Nombre","name","text",r.name,true)}${selectField("Categoría","category",Object.keys(CATEGORIES).map(x=>[x,x]),r.category)}${selectField("Día","dayId",t.days.map(d=>[d.id,`${formatDayDate(d.date)} · ${d.name}`]),r.dayId)}${field("Hora","time","time",r.time)}${selectField("Estado","status",STATUSES.map(x=>[x,x]),r.status)}${field("Localizador","locator","text",r.locator)}${field("Ubicación","location","text",r.location)}${field("Google Maps","mapUrl","url",r.mapUrl)}${field("Enlace de reserva","bookingUrl","url",r.bookingUrl)}${selectField("Actividad vinculada","activityId",[["","Ninguna"],...t.activities.map(a=>[a.id,a.title])],r.activityId||"")}${field("Estimado","estimated","number",r.estimated)}${field("Gastado","spent","number",r.spent)}<div class="field span-2"><label>Notas</label><textarea name="notes">${esc(r.notes)}</textarea></div><div class="span-2 btn-row">${r.id?`<button type="button" class="danger-btn" data-action="delete-reservation" data-id="${r.id}">🗑️</button>`:""}<button class="primary-btn">Guardar</button></div></form>`)}
+function practicalModal(key){return modal(titleCase(key),`<form data-form="practical" class="form-grid"><input type="hidden" name="key" value="${attr(key)}"><div class="field"><label>Notas</label><textarea name="value">${esc(currentTrip().practical[key])}</textarea></div><button class="primary-btn">Guardar</button></form>`)}
+function linkModal(index){const l=currentTrip().links[index]||{label:"",url:""};return modal(index>=0?"Editar enlace":"Nuevo enlace",`<form data-form="link" class="form-grid"><input type="hidden" name="index" value="${index}">${field("Nombre","label","text",l.label,true)}${field("URL","url","url",l.url,true)}<div class="btn-row">${index>=0?`<button type="button" class="danger-btn" data-action="delete-link" data-index="${index}">🗑️</button>`:""}<button class="primary-btn">Guardar</button></div></form>`)}
+function settingsModal(){const t=currentTrip();return modal("Configuración",`<div class="settings-list"><div class="setting"><h3>Datos</h3><div class="btn-row"><button class="secondary-btn" data-action="import">⬆️ Importar</button><button class="secondary-btn" data-action="export-all">⬇️ Todo</button>${t?'<button class="secondary-btn" data-action="export-trip">⬇️ Viaje</button>':""}</div></div><div class="setting"><h3>Moneda</h3><form data-form="default-currency" class="btn-row"><input name="currency" maxlength="3" value="${attr(state.settings.defaultCurrency)}"><button class="primary-btn">Guardar</button></form></div>${t?'<div class="setting"><h3>Viaje</h3><div class="btn-row"><button class="secondary-btn" data-action="edit-trip">✏️ Editar</button>'+(state.published.has(t.id)?'<button class="danger-btn" data-action="restore-published">↺ Publicado</button>':"")+'<button class="danger-btn" data-action="delete-trip">🗑️ Eliminar</button></div></div>':""}<div class="setting"><h3>Aplicación ${APP_VERSION}</h3>${state.deferredInstall?'<button class="primary-btn" data-action="install">⬇️ Instalar</button>':""}</div></div>`)}
+function field(label,name,type,value,required=false){return `<div class="field"><label>${label}</label><input name="${name}" type="${type}" value="${attr(value??"")}" ${required?"required":""} ${type==="number"?'min="0" step="0.01"':""}></div>`}
+function selectField(label,name,options,value){return `<div class="field"><label>${label}</label><select name="${name}">${options.map(([v,l])=>`<option value="${attr(v)}" ${v===value?"selected":""}>${esc(l)}</option>`).join("")}</select></div>`}
+function handleClick(e){const x=e.target.closest("[data-action]");if(!x)return;const a=x.dataset.action;if(a==="close-modal"&&e.target.closest("[data-modal-body]")&&!e.target.closest("button[data-action='close-modal']"))return;
+ if(a==="home")location.hash="";else if(a==="open-trip")location.hash=`#viaje/${encodeURIComponent(x.dataset.id)}?vista=info`;else if(a==="set-view"){state.view=x.dataset.view;location.hash=`#viaje/${encodeURIComponent(state.currentTripId)}?vista=${state.view}`;render()}else if(a==="settings")openModal("settings");else if(a==="close-modal"){state.modal=null;render()}else if(a==="new-trip")openModal("new-trip");else if(a==="edit-trip")openModal("trip");else if(a==="select-day"){state.currentDayId=x.dataset.id;state.dayView="plan";render()}else if(a==="day-view"){state.dayView=x.dataset.view;render()}else if(a==="add-day")openModal("day",{isNew:true});else if(a==="edit-day")openModal("day",{id:x.dataset.id});else if(a==="add-activity")openModal("activity",{dayId:x.dataset.dayId||state.currentDayId});else if(a==="edit-activity")openModal("activity",{id:x.dataset.id});else if(a==="toggle-activity"){state.expanded.has(x.dataset.id)?state.expanded.delete(x.dataset.id):state.expanded.add(x.dataset.id);render()}else if(a==="toggle-complete"){const y=findActivity(x.dataset.id);y.completed=!y.completed;state.expanded.delete(y.id);saveCurrent();render()}else if(a==="duplicate-activity")duplicateActivity(x.dataset.id);else if(a==="delete-activity")deleteActivity(x.dataset.id);else if(a==="delete-day")deleteDay(x.dataset.id);else if(a==="add-accommodation")openModal("accommodation");else if(a==="edit-accommodation")openModal("accommodation",{id:x.dataset.id});else if(a==="delete-accommodation")deleteAccommodation(x.dataset.id);else if(a==="add-reservation")openModal("reservation");else if(a==="edit-reservation")openModal("reservation",{id:x.dataset.id});else if(a==="delete-reservation")deleteReservation(x.dataset.id);else if(a==="edit-practical")openModal("practical",{key:x.dataset.key});else if(a==="add-link")openModal("link",{index:-1});else if(a==="edit-link")openModal("link",{index:+x.dataset.index});else if(a==="delete-link")deleteLink(+x.dataset.index);else if(a==="import"){importInput.value="";importInput.click()}else if(a==="export-all")exportData({wanderlogExport:2,exportedAt:new Date().toISOString(),trips:[...state.trips.values()]},"wanderlog-viajes.json");else if(a==="export-trip")exportData(currentTrip(),`${slug(currentTrip().name)}.json`);else if(a==="restore-published")restorePublished();else if(a==="delete-trip")deleteTrip();else if(a==="install")installApp()}
+function handleChange(e){const x=e.target;if(x.dataset.action==="day-accommodation"){const t=currentTrip(),d=t.days.find(d=>d.id===x.dataset.dayId);t.accommodations.forEach(a=>a.dayIds=a.dayIds.filter(id=>id!==d.id));d.accommodationId=x.value||null;const selected=t.accommodations.find(a=>a.id===d.accommodationId);if(selected&&!selected.dayIds.includes(d.id))selected.dayIds.push(d.id);saveCurrent();render()}}
+function handleSubmit(e){const f=e.target.closest("form[data-form]");if(!f)return;e.preventDefault();const fd=new FormData(f),v=Object.fromEntries(fd.entries()),t=currentTrip();
+ if(f.dataset.form==="new-trip"){if(v.endDate<v.startDate)return toast("Fechas no válidas");const id=uniqueId(slug(v.name)),days=datesBetween(v.startDate,v.endDate).map((date,i)=>({id:uid("day"),date,name:`Día ${i+1}`,accommodationId:null})),trip=normalizeTrip({id,name:v.name.trim(),destination:v.destination.trim(),icon:destinationIcon(v.destination),currency:state.settings.defaultCurrency,days,activities:[],accommodations:[],reservations:[],practical:Object.fromEntries(PRACTICAL.map(k=>[k,""])),links:[]});state.trips.set(id,trip);addCustomId(id);saveTrip(trip);syncCatalog();location.hash=`#viaje/${id}?vista=info`;return}
+ if(f.dataset.form==="activity"){const old=t.activities.find(a=>a.id===v.id),obj={id:v.id||uid("act"),dayId:v.dayId,time:v.time,endTime:"",title:v.title.trim(),category:v.category,location:v.location.trim(),mapQuery:v.mapQuery.trim(),status:v.status,completed:v.completed==="true",notes:v.notes.trim(),links:parseLinks(v.links),estimated:+v.estimated||0,spent:+v.spent||0,reservationId:v.reservationId||null};old?Object.assign(old,obj):t.activities.push(obj);sortActivities(t);finishSave("Actividad guardada");return}
+ if(f.dataset.form==="day"){let d=t.days.find(d=>d.id===v.id);if(d){f.querySelectorAll(".edit-row").forEach(row=>{const a=findActivity(row.dataset.rowId);row.querySelectorAll("input,select").forEach(i=>a[i.name]=i.value)});Object.assign(d,{date:v.date,name:v.name.trim(),accommodationId:v.accommodationId||null})}else{d={id:uid("day"),date:v.date,name:v.name.trim(),accommodationId:v.accommodationId||null};t.days.push(d);state.currentDayId=d.id}sortDays(t);sortActivities(t);finishSave("Día guardado");return}
+ if(f.dataset.form==="trip"){Object.assign(t,{name:v.name.trim(),destination:v.destination.trim(),icon:v.icon.trim()||destinationIcon(v.destination),currency:v.currency.trim().toUpperCase()});finishSave("Viaje guardado");return}
+ if(f.dataset.form==="accommodation"){const old=t.accommodations.find(a=>a.id===v.id),obj={id:v.id||uid("acc"),name:v.name.trim(),address:v.address.trim(),dayIds:fd.getAll("dayIds"),status:v.status,notes:v.notes.trim(),mapUrl:v.mapUrl.trim(),estimated:+v.estimated||0,spent:+v.spent||0,reservationId:v.reservationId||null};old?Object.assign(old,obj):t.accommodations.push(obj);t.days.forEach(d=>{if(d.accommodationId===obj.id&&!obj.dayIds.includes(d.id))d.accommodationId=null});obj.dayIds.forEach(id=>{const d=t.days.find(x=>x.id===id);if(d)d.accommodationId=obj.id});finishSave("Alojamiento guardado");return}
+ if(f.dataset.form==="reservation"){const old=t.reservations.find(r=>r.id===v.id),obj={id:v.id||uid("res"),name:v.name.trim(),category:v.category,dayId:v.dayId,time:v.time,status:v.status,locator:v.locator.trim(),location:v.location.trim(),mapUrl:v.mapUrl.trim(),bookingUrl:v.bookingUrl.trim(),notes:v.notes.trim(),estimated:+v.estimated||0,spent:+v.spent||0,activityId:v.activityId||null};old?Object.assign(old,obj):t.reservations.push(obj);if(obj.activityId){const act=findActivity(obj.activityId);if(act)act.reservationId=obj.id}finishSave("Reserva guardada");return}
+ if(f.dataset.form==="practical"){t.practical[v.key]=v.value.trim();finishSave("Nota guardada");return}
+ if(f.dataset.form==="link"){const obj={id:t.links[+v.index]?.id||uid("link"),label:v.label.trim(),url:v.url.trim()};+v.index>=0?t.links[+v.index]=obj:t.links.push(obj);finishSave("Enlace guardado");return}
+ if(f.dataset.form==="default-currency"){state.settings.defaultCurrency=v.currency.trim().toUpperCase()||"EUR";localStorage.setItem(SETTINGS_KEY,JSON.stringify(state.settings));state.modal=null;render();toast("Moneda guardada")}}
+function openModal(type,extra={}){state.modal={type,...extra};render()}
+function finishSave(msg){saveCurrent();state.modal=null;syncCatalog();render();toast(msg)}
+function duplicateActivity(id){const a=findActivity(id);if(!a)return;const copy=clone(a);copy.id=uid("act");copy.title+= " (copia)";currentTrip().activities.push(copy);sortActivities(currentTrip());saveCurrent();state.modal={type:"day",id:copy.dayId};render();toast("Actividad duplicada")}
+function deleteActivity(id){if(!confirm("¿Eliminar actividad?"))return;const t=currentTrip();t.activities=t.activities.filter(a=>a.id!==id);t.reservations.forEach(r=>{if(r.activityId===id)r.activityId=null});saveCurrent();if(state.modal?.type==="day")render();else{state.modal=null;render()}toast("Actividad eliminada")}
+function deleteDay(id){const t=currentTrip();if(t.days.length===1)return toast("El viaje debe tener al menos un día");if(!confirm("¿Eliminar el día y sus actividades?"))return;t.days=t.days.filter(d=>d.id!==id);t.activities=t.activities.filter(a=>a.dayId!==id);t.reservations=t.reservations.filter(r=>r.dayId!==id);t.accommodations.forEach(a=>a.dayIds=a.dayIds.filter(x=>x!==id));sortDays(t);state.currentDayId=t.days[0].id;finishSave("Día eliminado")}
+function deleteAccommodation(id){if(!confirm("¿Eliminar alojamiento?"))return;const t=currentTrip();t.accommodations=t.accommodations.filter(a=>a.id!==id);t.days.forEach(d=>{if(d.accommodationId===id)d.accommodationId=null});finishSave("Alojamiento eliminado")}
+function deleteReservation(id){if(!confirm("¿Eliminar reserva?"))return;const t=currentTrip();t.reservations=t.reservations.filter(r=>r.id!==id);t.activities.forEach(a=>{if(a.reservationId===id)a.reservationId=null});t.accommodations.forEach(a=>{if(a.reservationId===id)a.reservationId=null});finishSave("Reserva eliminada")}
+function deleteLink(i){if(!confirm("¿Eliminar enlace?"))return;currentTrip().links.splice(i,1);finishSave("Enlace eliminado")}
+function budget(t){const items=[];t.activities.filter(a=>!a.reservationId).forEach(a=>items.push({category:a.category,dayId:a.dayId,estimated:a.estimated,spent:a.spent}));t.reservations.forEach(r=>items.push({category:r.category,dayId:r.dayId,estimated:r.estimated,spent:r.spent}));t.accommodations.filter(a=>!a.reservationId).forEach(a=>items.push({category:"Alojamiento",dayId:a.dayIds[0]||t.days[0]?.id,estimated:a.estimated,spent:a.spent}));const out={estimated:0,spent:0,byCategory:{},byDay:{}};Object.keys(CATEGORIES).forEach(c=>out.byCategory[c]={estimated:0,spent:0});t.days.forEach(d=>out.byDay[d.id]={estimated:0,spent:0});items.forEach(i=>{out.estimated+=+i.estimated||0;out.spent+=+i.spent||0;out.byCategory[i.category].estimated+=+i.estimated||0;out.byCategory[i.category].spent+=+i.spent||0;if(out.byDay[i.dayId]){out.byDay[i.dayId].estimated+=+i.estimated||0;out.byDay[i.dayId].spent+=+i.spent||0}});return out}
+async function importJSONFile(){const file=importInput.files?.[0];if(!file)return;try{const p=JSON.parse(await file.text()),trips=Array.isArray(p.trips)?p.trips:[p];trips.forEach(raw=>{const t=normalizeTrip(raw);state.trips.set(t.id,t);saveTrip(t);if(!state.published.has(t.id))addCustomId(t.id)});syncCatalog();state.modal=null;render();toast(`${trips.length} viaje(s) importado(s)`)}catch(e){console.error(e);toast("JSON no válido")}}
+function exportData(data,name){const u=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"})),a=document.createElement("a");a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),500)}
+function restorePublished(){const t=currentTrip(),p=state.published.get(t.id);if(!p||!confirm("¿Restaurar la versión publicada?"))return;localStorage.removeItem(STORAGE_PREFIX+t.id);state.trips.set(t.id,clone(p));state.currentDayId=p.days[0]?.id;state.modal=null;syncCatalog();render();toast("Versión publicada restaurada")}
+function deleteTrip(){const t=currentTrip();if(!confirm(`¿Eliminar ${t.name}?`))return;localStorage.removeItem(STORAGE_PREFIX+t.id);localStorage.setItem(CUSTOM_KEY,JSON.stringify(loadJSON(CUSTOM_KEY,[]).filter(id=>id!==t.id)));state.trips.delete(t.id);if(state.published.has(t.id))state.trips.set(t.id,clone(state.published.get(t.id)));syncCatalog();location.hash=""}
+async function installApp(){if(state.deferredInstall){state.deferredInstall.prompt();await state.deferredInstall.userChoice;state.deferredInstall=null;render()}}
+function currentTrip(){return state.trips.get(state.currentTripId)}function currentDay(t=currentTrip()){return t.days.find(d=>d.id===state.currentDayId)||t.days[0]}function findActivity(id){return currentTrip()?.activities.find(a=>a.id===id)}
+function saveCurrent(){const t=currentTrip();sortDays(t);sortActivities(t);saveTrip(t);syncCatalog()}function saveTrip(t){try{localStorage.setItem(STORAGE_PREFIX+t.id,JSON.stringify(t))}catch{toast("No se pudo guardar")}}function addCustomId(id){const a=loadJSON(CUSTOM_KEY,[]);if(!a.includes(id)){a.push(id);localStorage.setItem(CUSTOM_KEY,JSON.stringify(a))}}
+function sortDays(t){t.days.sort((a,b)=>a.date.localeCompare(b.date));t.startDate=t.days[0]?.date;t.endDate=t.days.at(-1)?.date}function sortActivities(t){const order=Object.fromEntries(t.days.map((d,i)=>[d.id,i]));t.activities.sort((a,b)=>(order[a.dayId]??999)-(order[b.dayId]??999)||String(a.time||"99:99").localeCompare(String(b.time||"99:99")))}
+function nextDayDate(t){const d=new Date(`${t.days.at(-1)?.date||localISO(new Date())}T12:00:00`);d.setDate(d.getDate()+1);return localISO(d)}function datesBetween(a,b){const out=[],d=new Date(`${a}T12:00:00`),end=new Date(`${b}T12:00:00`);for(;d<=end;d.setDate(d.getDate()+1))out.push(localISO(d));return out}
+function destinationIcon(s){s=String(s).toLowerCase();if(/atenas|grecia|egina/.test(s))return"🇬🇷";if(/lisboa|porto|portugal/.test(s))return"🇵🇹";if(/parís|francia/.test(s))return"🇫🇷";if(/roma|italia|milán/.test(s))return"🇮🇹";if(/londres|reino unido/.test(s))return"🇬🇧";if(/madrid|barcelona|sevilla|españa/.test(s))return"🇪🇸";if(/tokio|japón/.test(s))return"🇯🇵";if(/playa|isla|costa/.test(s))return"🏝️";if(/montaña|sierra/.test(s))return"⛰️";return"🧭"}
+function formatHomeRange(a,b){const A=dateParts(a),B=dateParts(b);if(A.y===B.y&&A.m===B.m)return`${A.d}–${B.d} ${A.mon} ${A.y}`;if(A.y===B.y)return`${A.d} ${A.mon}–${B.d} ${B.mon} ${A.y}`;return`${A.d} ${A.mon} ${A.y}–${B.d} ${B.mon} ${B.y}`}
+function formatTripRange(a,b){const A=dateParts(a),B=dateParts(b);return A.m===B.m?`${A.d}–${B.d} ${A.mon}`:`${A.d} ${A.mon}–${B.d} ${B.mon}`}
+function dateParts(s){const d=new Date(`${s}T12:00:00`);return{d:d.getDate(),m:d.getMonth(),y:d.getFullYear(),mon:new Intl.DateTimeFormat("es-ES",{month:"short"}).format(d).replace(".","")}}
+function formatDayDate(s){return new Intl.DateTimeFormat("es-ES",{weekday:"short",day:"numeric",month:"short"}).format(new Date(`${s}T12:00:00`)).replace(/\./g,"")}function shortDay(s){return new Intl.DateTimeFormat("es-ES",{day:"numeric",month:"short"}).format(new Date(`${s}T12:00:00`)).replace(".","")}
+function routeUrl(stops){const clean=stops.map(stripMapUrl).filter(Boolean);if(clean.length===1)return mapSearch(clean[0]);const origin=clean[0],destination=clean.at(-1),waypoints=clean.slice(1,-1).join("|");return`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}${waypoints?`&waypoints=${encodeURIComponent(waypoints)}`:""}`}
+function directionsButton(dest,label,origin=""){if(!dest)return"";dest=stripMapUrl(dest);origin=stripMapUrl(origin);const url=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}${origin?`&origin=${encodeURIComponent(origin)}`:""}`;return`<a href="${url}" target="_blank" rel="noopener">📍 ${label}</a>`}function mapSearch(q){return`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`}
+function stripMapUrl(v){if(!v)return"";try{const u=new URL(v);return u.searchParams.get("query")||u.searchParams.get("destination")||v}catch{return v}}
+function parseLinks(s){return String(s||"").split(/\n+/).map(x=>x.trim()).filter(Boolean).map(x=>{const i=x.indexOf("|");return i<0?{label:"Enlace",url:x}:{label:x.slice(0,i).trim()||"Enlace",url:x.slice(i+1).trim()}}).filter(x=>safeUrl(x.url)!=="#")}
+function practicalIcon(k){return({"transporte local":"🚌","clima y equipaje":"🧳","gastronomía":"🍽️","compras":"🛍️","seguridad y salud":"🩺","plan alternativo":"🔁","nota libre":"📝"})[k]||"📝"}function titleCase(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+function money(v,c){try{return new Intl.NumberFormat("es-ES",{style:"currency",currency:c||"EUR",maximumFractionDigits:2}).format(+v||0)}catch{return`${(+v||0).toFixed(2)} ${c}`}}function safeUrl(v){try{const u=new URL(v,location.href);return["http:","https:"].includes(u.protocol)?u.href:"#"}catch{return"#"}}
+function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[c])}function attr(v){return esc(v)}function nl2br(v){return esc(v).replace(/\n/g,"<br>")}function slug(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"viaje"}function uid(p){return`${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`}function uniqueId(base){let id=base||"viaje",i=2;while(state.trips.has(id))id=`${base}-${i++}`;return id}function clone(v){return JSON.parse(JSON.stringify(v))}function loadJSON(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch{return f}}function localISO(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function toast(m){const r=document.querySelector("#toast-region");if(!r)return;const x=document.createElement("div");x.className="toast";x.textContent=m;r.appendChild(x);setTimeout(()=>x.remove(),2600)}function registerServiceWorker(){if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(console.warn)}
 })();

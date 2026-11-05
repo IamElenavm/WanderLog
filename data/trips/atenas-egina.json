@@ -1,56 +1,48 @@
 {
-  "schemaVersion": 1,
-  "publishedVersion": "2026.11.05",
+  "schemaVersion": 2,
+  "publishedVersion": "2026.11.05-r2",
   "id": "atenas-egina-2026",
   "name": "Atenas + Egina",
   "destination": "Atenas y Egina, Grecia",
+  "icon": "🇬🇷",
   "startDate": "2026-05-14",
   "endDate": "2026-05-18",
   "currency": "EUR",
-  "coverImage": "assets/img/atenas-egina.svg",
-  "summary": "Cinco días entre la historia de Atenas y una escapada tranquila a la isla de Egina.",
-  "travelers": "Elena",
-  "notes": "Plan flexible. Dejar margen para calor, colas y cambios de horario del ferry. Comprobar horarios oficiales antes de salir.",
-  "info": {
-    "accommodation": [
-      {
-        "name": "Alojamiento en Atenas",
-        "detail": "Zona recomendada: Plaka, Monastiraki o Koukaki. Añadir aquí dirección, teléfono y código de acceso al confirmar.",
-        "status": "Pendiente",
-        "mapQuery": "Plaka Athens Greece"
-      }
-    ],
-    "transport": [
-      {
-        "name": "Aeropuerto ↔ centro de Atenas",
-        "detail": "Metro línea 3 o autobús exprés. Elegir según hora de llegada y ubicación del alojamiento.",
-        "status": "Sin reserva necesaria",
-        "mapQuery": "Athens International Airport"
-      },
-      {
-        "name": "Ferry El Pireo ↔ Egina",
-        "detail": "Comprar ida y vuelta cuando estén publicados los horarios definitivos. Llegar al puerto con margen.",
-        "status": "Pendiente",
-        "mapQuery": "Piraeus Port Gate E8"
-      }
-    ],
-    "practical": [
-      "Documento de identidad y tarjeta sanitaria.",
-      "Calzado cómodo, protección solar y botella reutilizable.",
-      "Guardar billetes y reservas también sin conexión.",
-      "En Grecia se usa el euro y los enchufes tipo C/F."
-    ],
-    "links": [
-      {"label": "Mapa general de Atenas", "url": "https://www.google.com/maps/search/?api=1&query=Athens%2C%20Greece"},
-      {"label": "Mapa general de Egina", "url": "https://www.google.com/maps/search/?api=1&query=Aegina%2C%20Greece"},
-      {"label": "Aeropuerto de Atenas", "url": "https://www.aia.gr/"},
-      {"label": "Organización de Transporte de Atenas", "url": "https://www.oasa.gr/en/"}
-    ]
-  },
+  "days": [
+    {
+      "id": "day-01",
+      "date": "2026-05-14",
+      "name": "Llegada y centro histórico",
+      "accommodationId": "acc-athens"
+    },
+    {
+      "id": "day-02",
+      "date": "2026-05-15",
+      "name": "Acrópolis y Atenas clásica",
+      "accommodationId": "acc-athens"
+    },
+    {
+      "id": "day-03",
+      "date": "2026-05-16",
+      "name": "Excursión a Egina",
+      "accommodationId": "acc-athens"
+    },
+    {
+      "id": "day-04",
+      "date": "2026-05-17",
+      "name": "Museos y miradores",
+      "accommodationId": "acc-athens"
+    },
+    {
+      "id": "day-05",
+      "date": "2026-05-18",
+      "name": "Últimas compras y regreso",
+      "accommodationId": null
+    }
+  ],
   "activities": [
     {
       "id": "act-001",
-      "date": "2026-05-14",
       "time": "09:30",
       "endTime": "10:30",
       "title": "Llegada al aeropuerto de Atenas",
@@ -60,14 +52,19 @@
       "status": "Reservado",
       "completed": false,
       "notes": "Recoger equipaje y tener preparada la ruta al centro.",
-      "links": [{"label":"Abrir aeropuerto","url":"https://www.aia.gr/"}],
+      "links": [
+        {
+          "label": "Abrir aeropuerto",
+          "url": "https://www.aia.gr/"
+        }
+      ],
       "estimated": 10,
       "spent": 0,
-      "image": null
+      "dayId": "day-01",
+      "reservationId": "res-flight"
     },
     {
       "id": "act-002",
-      "date": "2026-05-14",
       "time": "10:45",
       "endTime": "11:45",
       "title": "Traslado al centro",
@@ -80,11 +77,11 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "image": null
+      "dayId": "day-01",
+      "reservationId": null
     },
     {
       "id": "act-003",
-      "date": "2026-05-14",
       "time": "12:30",
       "endTime": "13:00",
       "title": "Dejar equipaje y registro",
@@ -97,11 +94,11 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "image": null
+      "dayId": "day-01",
+      "reservationId": "res-hotel"
     },
     {
       "id": "act-004",
-      "date": "2026-05-14",
       "time": "14:00",
       "endTime": "15:15",
       "title": "Almuerzo en Plaka",
@@ -114,11 +111,11 @@
       "links": [],
       "estimated": 25,
       "spent": 0,
-      "image": null
+      "dayId": "day-01",
+      "reservationId": null
     },
     {
       "id": "act-005",
-      "date": "2026-05-14",
       "time": "16:00",
       "endTime": "18:30",
       "title": "Paseo por Plaka, Anafiótika y Monastiraki",
@@ -131,11 +128,11 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "image": {"type":"local","src":"assets/img/atenas-egina.svg","alt":"Atenas y Egina"}
+      "dayId": "day-01",
+      "reservationId": null
     },
     {
       "id": "act-006",
-      "date": "2026-05-14",
       "time": "19:30",
       "endTime": "21:00",
       "title": "Cena con vistas a la Acrópolis",
@@ -148,11 +145,11 @@
       "links": [],
       "estimated": 35,
       "spent": 0,
-      "image": null
+      "dayId": "day-01",
+      "reservationId": null
     },
     {
       "id": "act-007",
-      "date": "2026-05-15",
       "time": "08:00",
       "endTime": "08:45",
       "title": "Desayuno",
@@ -165,11 +162,11 @@
       "links": [],
       "estimated": 12,
       "spent": 0,
-      "image": null
+      "dayId": "day-02",
+      "reservationId": null
     },
     {
       "id": "act-008",
-      "date": "2026-05-15",
       "time": "09:00",
       "endTime": "11:30",
       "title": "Acrópolis y Partenón",
@@ -179,14 +176,19 @@
       "status": "Pendiente",
       "completed": false,
       "notes": "Confirmar franja de entrada y condiciones del billete oficial.",
-      "links": [{"label":"Información oficial","url":"https://hhticket.gr/"}],
+      "links": [
+        {
+          "label": "Información oficial",
+          "url": "https://hhticket.gr/"
+        }
+      ],
       "estimated": 30,
       "spent": 0,
-      "image": null
+      "dayId": "day-02",
+      "reservationId": "res-acropolis"
     },
     {
       "id": "act-009",
-      "date": "2026-05-15",
       "time": "11:45",
       "endTime": "13:30",
       "title": "Museo de la Acrópolis",
@@ -196,14 +198,19 @@
       "status": "Pendiente",
       "completed": false,
       "notes": "Visita después del recinto arqueológico.",
-      "links": [{"label":"Web del museo","url":"https://www.theacropolismuseum.gr/en"}],
+      "links": [
+        {
+          "label": "Web del museo",
+          "url": "https://www.theacropolismuseum.gr/en"
+        }
+      ],
       "estimated": 20,
       "spent": 0,
-      "image": null
+      "dayId": "day-02",
+      "reservationId": null
     },
     {
       "id": "act-010",
-      "date": "2026-05-15",
       "time": "14:00",
       "endTime": "15:15",
       "title": "Almuerzo en Koukaki",
@@ -216,11 +223,11 @@
       "links": [],
       "estimated": 25,
       "spent": 0,
-      "image": null
+      "dayId": "day-02",
+      "reservationId": null
     },
     {
       "id": "act-011",
-      "date": "2026-05-15",
       "time": "16:00",
       "endTime": "17:30",
       "title": "Ágora Antigua",
@@ -233,11 +240,11 @@
       "links": [],
       "estimated": 20,
       "spent": 0,
-      "image": null
+      "dayId": "day-02",
+      "reservationId": null
     },
     {
       "id": "act-012",
-      "date": "2026-05-15",
       "time": "18:30",
       "endTime": "20:00",
       "title": "Atardecer en la colina Filopapo",
@@ -250,11 +257,11 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "image": null
+      "dayId": "day-02",
+      "reservationId": null
     },
     {
       "id": "act-013",
-      "date": "2026-05-16",
       "time": "07:15",
       "endTime": "08:00",
       "title": "Traslado al puerto de El Pireo",
@@ -267,11 +274,11 @@
       "links": [],
       "estimated": 3,
       "spent": 0,
-      "image": null
+      "dayId": "day-03",
+      "reservationId": null
     },
     {
       "id": "act-014",
-      "date": "2026-05-16",
       "time": "08:30",
       "endTime": "09:40",
       "title": "Ferry a Egina",
@@ -284,11 +291,11 @@
       "links": [],
       "estimated": 20,
       "spent": 0,
-      "image": null
+      "dayId": "day-03",
+      "reservationId": "res-ferry"
     },
     {
       "id": "act-015",
-      "date": "2026-05-16",
       "time": "10:00",
       "endTime": "11:00",
       "title": "Paseo por el puerto y la ciudad de Egina",
@@ -301,11 +308,11 @@
       "links": [],
       "estimated": 8,
       "spent": 0,
-      "image": null
+      "dayId": "day-03",
+      "reservationId": null
     },
     {
       "id": "act-016",
-      "date": "2026-05-16",
       "time": "11:15",
       "endTime": "12:00",
       "title": "Templo de Apolo y Colona",
@@ -318,11 +325,11 @@
       "links": [],
       "estimated": 5,
       "spent": 0,
-      "image": null
+      "dayId": "day-03",
+      "reservationId": null
     },
     {
       "id": "act-017",
-      "date": "2026-05-16",
       "time": "12:15",
       "endTime": "13:00",
       "title": "Traslado al templo de Afea",
@@ -335,11 +342,11 @@
       "links": [],
       "estimated": 18,
       "spent": 0,
-      "image": null
+      "dayId": "day-03",
+      "reservationId": null
     },
     {
       "id": "act-018",
-      "date": "2026-05-16",
       "time": "13:00",
       "endTime": "14:00",
       "title": "Templo de Afea",
@@ -352,11 +359,11 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "image": null
+      "dayId": "day-03",
+      "reservationId": null
     },
     {
       "id": "act-019",
-      "date": "2026-05-16",
       "time": "14:30",
       "endTime": "16:00",
       "title": "Almuerzo junto al mar",
@@ -369,11 +376,11 @@
       "links": [],
       "estimated": 30,
       "spent": 0,
-      "image": null
+      "dayId": "day-03",
+      "reservationId": null
     },
     {
       "id": "act-020",
-      "date": "2026-05-16",
       "time": "16:00",
       "endTime": "17:30",
       "title": "Playa y paseo costero",
@@ -386,11 +393,11 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "image": null
+      "dayId": "day-03",
+      "reservationId": null
     },
     {
       "id": "act-021",
-      "date": "2026-05-16",
       "time": "18:30",
       "endTime": "19:40",
       "title": "Ferry de regreso a El Pireo",
@@ -403,11 +410,11 @@
       "links": [],
       "estimated": 20,
       "spent": 0,
-      "image": null
+      "dayId": "day-03",
+      "reservationId": "res-ferry"
     },
     {
       "id": "act-022",
-      "date": "2026-05-17",
       "time": "09:00",
       "endTime": "10:00",
       "title": "Desayuno y mercado central",
@@ -420,11 +427,11 @@
       "links": [],
       "estimated": 15,
       "spent": 0,
-      "image": null
+      "dayId": "day-04",
+      "reservationId": null
     },
     {
       "id": "act-023",
-      "date": "2026-05-17",
       "time": "10:30",
       "endTime": "12:30",
       "title": "Museo Arqueológico Nacional",
@@ -434,14 +441,19 @@
       "status": "Pendiente",
       "completed": false,
       "notes": "Elegir las salas prioritarias si hay poco tiempo.",
-      "links": [{"label":"Web del museo","url":"https://www.namuseum.gr/en/"}],
+      "links": [
+        {
+          "label": "Web del museo",
+          "url": "https://www.namuseum.gr/en/"
+        }
+      ],
       "estimated": 15,
       "spent": 0,
-      "image": null
+      "dayId": "day-04",
+      "reservationId": null
     },
     {
       "id": "act-024",
-      "date": "2026-05-17",
       "time": "13:15",
       "endTime": "14:30",
       "title": "Almuerzo en Exarchia",
@@ -454,11 +466,11 @@
       "links": [],
       "estimated": 22,
       "spent": 0,
-      "image": null
+      "dayId": "day-04",
+      "reservationId": null
     },
     {
       "id": "act-025",
-      "date": "2026-05-17",
       "time": "16:00",
       "endTime": "17:30",
       "title": "Plaza Syntagma y Jardín Nacional",
@@ -471,11 +483,11 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "image": null
+      "dayId": "day-04",
+      "reservationId": null
     },
     {
       "id": "act-026",
-      "date": "2026-05-17",
       "time": "18:00",
       "endTime": "19:30",
       "title": "Monte Licabeto al atardecer",
@@ -488,11 +500,11 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "image": null
+      "dayId": "day-04",
+      "reservationId": null
     },
     {
       "id": "act-027",
-      "date": "2026-05-17",
       "time": "20:30",
       "endTime": "22:00",
       "title": "Cena de despedida",
@@ -505,11 +517,11 @@
       "links": [],
       "estimated": 40,
       "spent": 0,
-      "image": null
+      "dayId": "day-04",
+      "reservationId": null
     },
     {
       "id": "act-028",
-      "date": "2026-05-18",
       "time": "08:00",
       "endTime": "09:00",
       "title": "Desayuno y salida del alojamiento",
@@ -522,11 +534,11 @@
       "links": [],
       "estimated": 12,
       "spent": 0,
-      "image": null
+      "dayId": "day-05",
+      "reservationId": null
     },
     {
       "id": "act-029",
-      "date": "2026-05-18",
       "time": "09:30",
       "endTime": "11:00",
       "title": "Tiempo libre para compras",
@@ -539,11 +551,11 @@
       "links": [],
       "estimated": 25,
       "spent": 0,
-      "image": null
+      "dayId": "day-05",
+      "reservationId": null
     },
     {
       "id": "act-030",
-      "date": "2026-05-18",
       "time": "11:30",
       "endTime": "12:30",
       "title": "Traslado al aeropuerto",
@@ -556,7 +568,120 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "image": null
+      "dayId": "day-05",
+      "reservationId": null
+    }
+  ],
+  "accommodations": [
+    {
+      "id": "acc-athens",
+      "name": "Alojamiento en Atenas",
+      "address": "Plaka, Atenas, Grecia",
+      "dayIds": [
+        "day-01",
+        "day-02",
+        "day-03",
+        "day-04"
+      ],
+      "status": "Pendiente",
+      "notes": "Actualizar dirección, teléfono y código de acceso al confirmar.",
+      "mapUrl": "https://www.google.com/maps/search/?api=1&query=Plaka%2C%20Athens%2C%20Greece",
+      "estimated": 0,
+      "spent": 0,
+      "reservationId": "res-hotel"
+    }
+  ],
+  "reservations": [
+    {
+      "id": "res-hotel",
+      "name": "Alojamiento en Atenas",
+      "category": "Alojamiento",
+      "dayId": "day-01",
+      "time": "12:30",
+      "status": "Pendiente",
+      "locator": "",
+      "location": "Plaka, Atenas",
+      "mapUrl": "https://www.google.com/maps/search/?api=1&query=Plaka%2C%20Athens%2C%20Greece",
+      "bookingUrl": "",
+      "notes": "Completar al confirmar el alojamiento.",
+      "estimated": 0,
+      "spent": 0,
+      "activityId": "act-003"
+    },
+    {
+      "id": "res-flight",
+      "name": "Vuelo a Atenas",
+      "category": "Transporte",
+      "dayId": "day-01",
+      "time": "09:30",
+      "status": "Reservado",
+      "locator": "",
+      "location": "Aeropuerto Internacional de Atenas",
+      "mapUrl": "https://www.google.com/maps/search/?api=1&query=Athens%20International%20Airport",
+      "bookingUrl": "",
+      "notes": "Añadir compañía, vuelo y localizador.",
+      "estimated": 10,
+      "spent": 0,
+      "activityId": "act-001"
+    },
+    {
+      "id": "res-ferry",
+      "name": "Ferry El Pireo ↔ Egina",
+      "category": "Transporte",
+      "dayId": "day-03",
+      "time": "08:30",
+      "status": "Pendiente",
+      "locator": "",
+      "location": "Puerto de El Pireo, puerta E8",
+      "mapUrl": "https://www.google.com/maps/search/?api=1&query=Piraeus%20Port%20Gate%20E8",
+      "bookingUrl": "",
+      "notes": "Confirmar horarios de ida y vuelta.",
+      "estimated": 40,
+      "spent": 0,
+      "activityId": "act-014"
+    },
+    {
+      "id": "res-acropolis",
+      "name": "Acrópolis y Partenón",
+      "category": "Cultura",
+      "dayId": "day-02",
+      "time": "09:00",
+      "status": "Pendiente",
+      "locator": "",
+      "location": "Acrópolis de Atenas",
+      "mapUrl": "https://www.google.com/maps/search/?api=1&query=Acropolis%20of%20Athens",
+      "bookingUrl": "https://hhticket.gr/",
+      "notes": "Confirmar franja de entrada.",
+      "estimated": 30,
+      "spent": 0,
+      "activityId": "act-008"
+    }
+  ],
+  "practical": {
+    "transporte local": "Metro línea 3 y autobuses exprés conectan el aeropuerto con el centro. Comprobar horarios del ferry el día anterior.",
+    "clima y equipaje": "Calzado cómodo, protección solar, botella reutilizable y una capa ligera para el ferry.",
+    "gastronomía": "Probar meze, ensalada griega, pescado, yogur y pistachos de Egina.",
+    "compras": "Pistachos y productos locales en Egina; dejar las compras de Atenas para la última mañana.",
+    "seguridad y salud": "Llevar documento de identidad y tarjeta sanitaria. Vigilar pertenencias en transporte y zonas concurridas.",
+    "plan alternativo": "Si hace mal tiempo en Egina, mantener el ferry solo si opera y priorizar museos y cafés en Atenas.",
+    "nota libre": "Guardar billetes y reservas también sin conexión."
+  },
+  "links": [
+    {
+      "label": "Mapa general de Atenas",
+      "url": "https://www.google.com/maps/search/?api=1&query=Athens%2C%20Greece"
+    },
+    {
+      "label": "Mapa general de Egina",
+      "url": "https://www.google.com/maps/search/?api=1&query=Aegina%2C%20Greece"
+    },
+    {
+      "label": "Aeropuerto de Atenas",
+      "url": "https://www.aia.gr/"
+    },
+    {
+      "label": "Organización de Transporte de Atenas",
+      "url": "https://www.oasa.gr/en/"
     }
   ]
 }

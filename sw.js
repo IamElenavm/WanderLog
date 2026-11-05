@@ -1,4 +1,4 @@
-const CACHE = "wanderlog-v1.0.0";
+const CACHE = "wanderlog-v2.0.0";
 const CORE = [
   "./",
   "./index.html",
@@ -8,7 +8,6 @@ const CORE = [
   "./assets/icons/icon.svg",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
-  "./assets/img/atenas-egina.svg",
   "./data/catalog.json",
   "./data/trips/atenas-egina.json"
 ];
