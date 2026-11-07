@@ -35,17 +35,30 @@ WanderLog/
 - **assets/app.js**: código compacto (una función por línea, muy denso). Bloques principales:
   - Arranque y datos: `init()`, `loadTrips()` (lee `catalog.json` y cada viaje) y `normalizeTrip()`. Esta última migra modelos antiguos con `migrateBookings()`/`mergeBooking()` y normaliza cada actividad con `normalizeActivity()`.
   - Modelo 3: auxiliares `isStay`, `stays`, `stayForDay` (alojamiento de cada noche), `isBooking`, `legView` y `dayEntries` (tramos de ida y vuelta en el horario).
+  - Modelo 4 (bloque "Modelo 4" tras `linksHtml`):
+    - Alojamiento activo: `activeStay`, `departingStay`, `shownStay` y `staySwitch`.
+    - Dinero: `toEUR` y `amount`; `budget()` devuelve también `byPerson` y `missing`.
+    - Cabecera: `renderTripHeader` y `miniChart`.
+    - Zona horaria: `renderClocks`, `tzOffsetMin`, `zonedToUTC` y `ensureTimeZone`.
+    - Tiempo: `loadWeather` y `weatherHtml`, con caché en `wanderlog.wx.*`.
+    - Drive: `drivePreview`.
+    - Secciones de Info: `renderInsurances`, `renderPacking`, `renderTasks`, `renderTravelers` y `renderRates`.
+    - Calendario: `buildICS`. Impresión: `renderPrint` y `printTrip`. La ruta `?imprimir=1` muestra la vista de impresión, útil para pruebas.
   - Enrutado por hash: `#viaje/<id>` (`applyRoute`).
   - Renderizado con plantillas de texto: `render()` reconstruye `#app` entero. Funciones `renderHome`, `renderTrip`, `renderInfo`, `renderSchedule`, `renderActivity`, `renderBudgetBody`, etc.
   - Mapas: `scheduleLeafletMaps`, `initMiniLeafletMap`, `initRouteLeafletMap`. `geocodePlace` usa una cola y guarda los resultados en `localStorage` (`wanderlog.geo.*`).
   - Modales de edición: viaje, día, actividad (que sirve también para reservas, alojamientos y transportes con vuelta, con campos que se muestran u ocultan según la categoría mediante `updateActivityForm`), notas prácticas, enlaces y ajustes.
   - Eventos delegados: `handleClick`, `handleChange` y `handleSubmit`, que se basan en `data-action` y `data-form`.
-  - Persistencia: guardado automático en `localStorage`, que tiene prioridad sobre el JSON publicado. Importación y exportación en JSON.
+  - Persistencia: guardado automático en `localStorage`, que tiene prioridad sobre el JSON publicado. `saveCurrent()` actualiza `updatedAt`.
+  - Importación y exportación: `importJSONFile` → `nextImport` (cola de viajes). Si el id ya existe, abre la ventana `import-conflict` (`compareTrips`), con las opciones Cancelar, Guardar como viaje diferente (`import-new`) y Reemplazar.
   - Presupuesto: suma las actividades sin `linkedTo` («Incluida en»).
 - **assets/styles.css**: todos los estilos, en formato compacto.
 - **sw.js**: caché `wanderlog-vX.Y.Z` con la lista `CORE`. Sirve primero desde la caché y actualiza en segundo plano. Al activarse borra las cachés antiguas. Solo intercepta GET del mismo origen.
 - **data/catalog.json**: `schemaVersion`, `updatedAt` y la lista `trips` (`id`, `file`, `name`, `destination`, `startDate`, `endDate`, `icon`).
-- **data/trips/*.json**: modelo de datos v3 (`schemaVersion: 3`, `publishedVersion`). Contiene `days`, `activities`, `practical` (siete bloques) y `links`. Ya no hay `reservations` ni `accommodations`: todo es una actividad.
+- **data/trips/*.json**: modelo de datos v4 (`schemaVersion: 4`, `publishedVersion`).
+  - Contiene `travelers`, `timeZone`, `currency`, `rates`, `insurances`, `packing`, `tasks`, `days` (con `weatherPlace` opcional), `activities` (con `currency` y `participants`), `practical` (siete bloques) y `links`.
+  - Ya no hay `reservations` ni `accommodations`: todo es una actividad.
+  - Servicios externos: Open-Meteo (previsión y geocodificación, sin clave) y Nominatim (geocodificación de direcciones para los mapas).
   - Una reserva es una actividad en estado `Pendiente` o `Reservado`.
   - Un alojamiento es una actividad de categoría `Alojamiento` cuyo fin (`endDate`) cae en un día posterior al inicio.
   - Un transporte puede tener `returnTrip` (vuelta).
