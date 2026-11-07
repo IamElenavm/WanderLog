@@ -16,12 +16,11 @@ WanderLog/
 ├── assets/
 │   ├── js/                 Código de la app (ver «Scripts»)
 │   ├── styles.css          Estilos compactos, mobile-first, y @media print
-│   ├── icons/              icon.svg, icon-192.png, icon-512.png
-│   └── img/                atenas-egina.svg (sin uso actualmente; no está en CORE)
+│   └── icons/              icon.svg, icon-192.png, icon-512.png
 └── data/
     ├── catalog.json        Índice de viajes publicados (formato propio, schemaVersion 2)
     └── trips/
-        └── atenas-egina.json   Un JSON por viaje (se migra al modelo 5 al cargarlo)
+        └── atenas-egina.json   Un JSON por viaje (guardado ya en el modelo 5)
 ```
 
 ## Otros archivos

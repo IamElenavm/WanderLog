@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 4,
-  "publishedVersion": "2026.11.07-r6",
+  "schemaVersion": 5,
+  "publishedVersion": "2026.11.07-r7",
   "id": "atenas-egina-2026",
   "name": "Atenas + Egina",
   "destination": "Atenas y Egina, Grecia",
@@ -58,8 +58,12 @@
       "time": "02:00",
       "endDate": "2026-11-08",
       "endTime": "02:45",
-      "title": "Vuelos de ida y vuelta",
+      "title": "Ida · Vuelos de ida y vuelta",
       "category": "Transporte",
+      "transportType": "Avión",
+      "origin": "",
+      "destination": "",
+      "transportCode": "",
       "location": "Aeropuerto Internacional de Atenas",
       "mapQuery": "Athens International Airport",
       "lat": 37.9364,
@@ -72,19 +76,12 @@
       "links": [],
       "estimated": 400,
       "spent": 334.5,
-      "linkedTo": null,
-      "returnTrip": {
-        "dayId": "day-05",
-        "time": "15:00",
-        "endDate": "2026-11-12",
-        "endTime": "",
-        "notes": "Revisar terminal, puerta y requisitos de embarque.",
-        "location": "Aeropuerto Internacional de Atenas",
-        "mapQuery": "Athens International Airport",
-        "lat": 37.9364,
-        "lng": 23.9445,
-        "completed": false
-      }
+      "currency": "EUR",
+      "participants": [],
+      "related": [
+        "act-001-vuelta"
+      ],
+      "journeyId": "act-001"
     },
     {
       "id": "act-002",
@@ -94,6 +91,10 @@
       "endTime": "03:30",
       "title": "Traslado al alojamiento",
       "category": "Transporte",
+      "transportType": "Taxi",
+      "origin": "",
+      "destination": "",
+      "transportCode": "",
       "location": "Aeropuerto → Plaka",
       "mapQuery": "Athens International Airport to Plaka Athens",
       "lat": 37.972,
@@ -106,8 +107,9 @@
       "links": [],
       "estimated": 40,
       "spent": 38,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "acc-athens",
@@ -127,8 +129,11 @@
       "links": [],
       "estimated": 320,
       "spent": 283,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": [
+        "act-039"
+      ]
     },
     {
       "id": "act-003",
@@ -150,8 +155,9 @@
       "links": [],
       "estimated": 12,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-004",
@@ -173,8 +179,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-005",
@@ -201,8 +208,9 @@
       ],
       "estimated": 90,
       "spent": 83,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-006",
@@ -224,8 +232,9 @@
       "links": [],
       "estimated": 25,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-007",
@@ -247,8 +256,9 @@
       "links": [],
       "estimated": 20,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-008",
@@ -270,8 +280,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-009",
@@ -293,8 +304,9 @@
       "links": [],
       "estimated": 30,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-010",
@@ -316,8 +328,9 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-011",
@@ -344,8 +357,9 @@
       ],
       "estimated": 90,
       "spent": 83,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-012",
@@ -367,8 +381,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-013",
@@ -390,8 +405,9 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-014",
@@ -413,8 +429,9 @@
       "links": [],
       "estimated": 25,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-015",
@@ -436,8 +453,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-016",
@@ -459,8 +477,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-017",
@@ -482,8 +501,9 @@
       "links": [],
       "estimated": 30,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-020",
@@ -505,8 +525,9 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-021",
@@ -516,6 +537,10 @@
       "endTime": "09:30",
       "title": "Traslado al Templo de Aphaia",
       "category": "Transporte",
+      "transportType": "Taxi",
+      "origin": "",
+      "destination": "",
+      "transportCode": "",
       "location": "Egina Town → Templo de Aphaia",
       "mapQuery": "Aegina Port to Temple of Aphaia",
       "lat": 37.754,
@@ -528,8 +553,9 @@
       "links": [],
       "estimated": 30,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-018",
@@ -539,6 +565,10 @@
       "endTime": "10:10",
       "title": "Salida hacia El Pireo",
       "category": "Transporte",
+      "transportType": "Taxi",
+      "origin": "",
+      "destination": "",
+      "transportCode": "",
       "location": "Plaka → Puerto de El Pireo",
       "mapQuery": "Plaka Athens to Piraeus Port Gate E8",
       "lat": 37.9427,
@@ -551,8 +581,9 @@
       "links": [],
       "estimated": 18,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-022",
@@ -574,8 +605,9 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-019",
@@ -583,8 +615,12 @@
       "time": "10:40",
       "endDate": "2026-11-10",
       "endTime": "11:20",
-      "title": "Ferris El Pireo ↔ Egina",
+      "title": "Ida · Ferris El Pireo ↔ Egina",
       "category": "Transporte",
+      "transportType": "Ferry",
+      "origin": "",
+      "destination": "",
+      "transportCode": "",
       "location": "Puerto de El Pireo → Puerto de Egina",
       "mapQuery": "Piraeus Port to Aegina Port",
       "lat": 37.7461,
@@ -606,19 +642,12 @@
       ],
       "estimated": 70,
       "spent": 68,
-      "linkedTo": null,
-      "returnTrip": {
-        "dayId": "day-03",
-        "time": "17:50",
-        "endDate": "2026-11-10",
-        "endTime": "18:30",
-        "notes": "",
-        "location": "Puerto de Egina → Puerto de El Pireo",
-        "mapQuery": "Aegina Port to Piraeus Port",
-        "lat": 37.9427,
-        "lng": 23.6469,
-        "completed": false
-      }
+      "currency": "EUR",
+      "participants": [],
+      "related": [
+        "act-019-vuelta"
+      ],
+      "journeyId": "act-019"
     },
     {
       "id": "act-023",
@@ -640,8 +669,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-024",
@@ -663,8 +693,9 @@
       "links": [],
       "estimated": 30,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-025",
@@ -686,8 +717,40 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
+    },
+    {
+      "id": "act-019-vuelta",
+      "dayId": "day-03",
+      "time": "17:50",
+      "endDate": "2026-11-10",
+      "endTime": "18:30",
+      "title": "Vuelta · Ferris El Pireo ↔ Egina",
+      "category": "Transporte",
+      "transportType": "Ferry",
+      "origin": "",
+      "destination": "",
+      "transportCode": "",
+      "location": "Puerto de Egina → Puerto de El Pireo",
+      "mapQuery": "Aegina Port to Piraeus Port",
+      "lat": 37.9427,
+      "lng": 23.6469,
+      "status": "Reservado",
+      "completed": false,
+      "notes": "",
+      "locator": "105984781",
+      "bookingUrl": "",
+      "links": [],
+      "estimated": 0,
+      "spent": 0,
+      "currency": "EUR",
+      "participants": [],
+      "related": [
+        "act-019"
+      ],
+      "journeyId": "act-019"
     },
     {
       "id": "act-027",
@@ -697,6 +760,10 @@
       "endTime": "19:10",
       "title": "Regreso al centro",
       "category": "Transporte",
+      "transportType": "Taxi",
+      "origin": "",
+      "destination": "",
+      "transportCode": "",
       "location": "El Pireo → Plaka",
       "mapQuery": "Piraeus Port to Plaka Athens",
       "lat": 37.972,
@@ -709,8 +776,9 @@
       "links": [],
       "estimated": 5,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-028",
@@ -732,8 +800,9 @@
       "links": [],
       "estimated": 28,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-029",
@@ -755,8 +824,9 @@
       "links": [],
       "estimated": 8,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-030",
@@ -783,8 +853,9 @@
       ],
       "estimated": 15,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-031",
@@ -806,8 +877,9 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-032",
@@ -829,8 +901,9 @@
       "links": [],
       "estimated": 15,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-033",
@@ -838,8 +911,12 @@
       "time": "14:00",
       "endDate": "2026-11-11",
       "endTime": "16:15",
-      "title": "Tour a Cabo Sunión",
+      "title": "Ida · Tour a Cabo Sunión",
       "category": "Transporte",
+      "transportType": "Autobús",
+      "origin": "",
+      "destination": "",
+      "transportCode": "",
       "location": "Atenas → Cabo Sunión",
       "mapQuery": "Athens to Cape Sounion",
       "lat": 37.65,
@@ -852,19 +929,13 @@
       "links": [],
       "estimated": 40,
       "spent": 38,
-      "linkedTo": null,
-      "returnTrip": {
-        "dayId": "day-04",
-        "time": "18:00",
-        "endDate": "2026-11-11",
-        "endTime": "20:00",
-        "notes": "Hora orientativa sujeta al tour y al tráfico.",
-        "location": "Cabo Sunión → Atenas",
-        "mapQuery": "Cape Sounion to Athens",
-        "lat": 37.9838,
-        "lng": 23.7275,
-        "completed": false
-      }
+      "currency": "EUR",
+      "participants": [],
+      "related": [
+        "act-033-vuelta",
+        "act-034"
+      ],
+      "journeyId": "act-033"
     },
     {
       "id": "act-034",
@@ -886,8 +957,42 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "linkedTo": "act-033",
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": [
+        "act-033"
+      ]
+    },
+    {
+      "id": "act-033-vuelta",
+      "dayId": "day-04",
+      "time": "18:00",
+      "endDate": "2026-11-11",
+      "endTime": "20:00",
+      "title": "Vuelta · Tour a Cabo Sunión",
+      "category": "Transporte",
+      "transportType": "Autobús",
+      "origin": "",
+      "destination": "",
+      "transportCode": "",
+      "location": "Cabo Sunión → Atenas",
+      "mapQuery": "Cape Sounion to Athens",
+      "lat": 37.9838,
+      "lng": 23.7275,
+      "status": "Reservado",
+      "completed": false,
+      "notes": "Hora orientativa sujeta al tour y al tráfico.",
+      "locator": "GYG996QGHRXL",
+      "bookingUrl": "",
+      "links": [],
+      "estimated": 0,
+      "spent": 0,
+      "currency": "EUR",
+      "participants": [],
+      "related": [
+        "act-033"
+      ],
+      "journeyId": "act-033"
     },
     {
       "id": "act-036",
@@ -909,8 +1014,9 @@
       "links": [],
       "estimated": 38,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-037",
@@ -932,8 +1038,9 @@
       "links": [],
       "estimated": 10,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-038",
@@ -955,8 +1062,9 @@
       "links": [],
       "estimated": 35,
       "spent": 0,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
     },
     {
       "id": "act-039",
@@ -978,8 +1086,11 @@
       "links": [],
       "estimated": 0,
       "spent": 0,
-      "linkedTo": "acc-athens",
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": [
+        "acc-athens"
+      ]
     },
     {
       "id": "act-040",
@@ -989,6 +1100,10 @@
       "endTime": "12:20",
       "title": "Taxi al aeropuerto",
       "category": "Transporte",
+      "transportType": "Taxi",
+      "origin": "",
+      "destination": "",
+      "transportCode": "",
       "location": "Plaka → Aeropuerto Internacional de Atenas",
       "mapQuery": "Plaka Athens to Athens International Airport",
       "lat": 37.9364,
@@ -1001,8 +1116,40 @@
       "links": [],
       "estimated": 40,
       "spent": 38,
-      "linkedTo": null,
-      "returnTrip": null
+      "currency": "EUR",
+      "participants": [],
+      "related": []
+    },
+    {
+      "id": "act-001-vuelta",
+      "dayId": "day-05",
+      "time": "15:00",
+      "endDate": "2026-11-12",
+      "endTime": "",
+      "title": "Vuelta · Vuelos de ida y vuelta",
+      "category": "Transporte",
+      "transportType": "Avión",
+      "origin": "",
+      "destination": "",
+      "transportCode": "",
+      "location": "Aeropuerto Internacional de Atenas",
+      "mapQuery": "Athens International Airport",
+      "lat": 37.9364,
+      "lng": 23.9445,
+      "status": "Reservado",
+      "completed": false,
+      "notes": "Revisar terminal, puerta y requisitos de embarque.",
+      "locator": "8NGV6P",
+      "bookingUrl": "",
+      "links": [],
+      "estimated": 0,
+      "spent": 0,
+      "currency": "EUR",
+      "participants": [],
+      "related": [
+        "act-001"
+      ],
+      "journeyId": "act-001"
     }
   ],
   "practical": {

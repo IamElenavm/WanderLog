@@ -1,4 +1,4 @@
-const CACHE = "wanderlog-v5.0.0";
+const CACHE = "wanderlog-v5.0.1";
 const CORE = [
   "./",
   "./index.html",
