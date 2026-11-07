@@ -9,7 +9,7 @@ WanderLog es una aplicación web estática para planificar viajes: horario por d
 - Librería externa: **Leaflet 1.9.4** (CSS y JS desde cdnjs), con teselas de OpenStreetMap.
 - Servicios externos, sin clave y solo con conexión: **Open-Meteo** (previsión, geocodificación de ciudades y zona horaria), **Nominatim** (direcciones para los mapas), **Google Maps** (solo enlaces) y **Google Drive** (solo vista previa `/preview`).
 - Interfaz y contenidos en español.
-- **Versión actual:** app `5.0.1` · caché `wanderlog-v5.0.1` · modelo de datos `5`. El viaje publicado (`atenas-egina.json`, `2026.11.07-r7`) ya está guardado en el modelo 5.
+- **Versión actual:** app `5.0.2` · caché `wanderlog-v5.0.2` · modelo de datos `5`. El viaje publicado (`atenas-egina.json`, `2026.11.07-r7`) ya está guardado en el modelo 5.
 - **Código:** nueve scripts en `assets/js/` (`core`, `model`, `services`, `info`, `schedule`, `forms`, `io`, `events`, `main`). Se cargan con `defer` en ese orden desde `index.html` y comparten el ámbito global; no hay `import`. `APP_VERSION` está en `core.js`.
 
 **Estructura de archivos, funciones de cada script y modelo de datos completo:** [docs/modelo-datos.md](docs/modelo-datos.md).

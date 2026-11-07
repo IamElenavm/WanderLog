@@ -1,6 +1,6 @@
 "use strict";
 // WanderLog · core.js
-const APP_VERSION="5.0.1", STORAGE_PREFIX="wanderlog.trip.", CUSTOM_KEY="wanderlog.customTrips", SETTINGS_KEY="wanderlog.settings";
+const APP_VERSION="5.0.2", STORAGE_PREFIX="wanderlog.trip.", CUSTOM_KEY="wanderlog.customTrips", SETTINGS_KEY="wanderlog.settings";
 const CATEGORIES={Transporte:{icon:"🚌",className:"transporte"},Alojamiento:{icon:"🛏️",className:"alojamiento"},Cultura:{icon:"🏛️",className:"cultura"},Gastronomía:{icon:"🍽️",className:"gastronomia"},Naturaleza:{icon:"🌿",className:"naturaleza"},Otro:{icon:"📍",className:"otro"}};
 const STATUSES=["Sin reserva necesaria","Pendiente","Reservado"],BOOKING_STATUSES=["Pendiente","Reservado"];
 const PRACTICAL=["transporte local","clima y equipaje","gastronomía","compras","seguridad y salud","plan alternativo","nota libre"];

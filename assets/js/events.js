@@ -15,6 +15,8 @@ const ACTIONS={
  "import-as-new":()=>openModal("import-new",{trip:state.modal.trip}),
  "import-back":()=>openModal("import-conflict",{trip:state.modal.trip}),
  "add-menu":()=>openModal("add-menu"),
+ "go-lodging":()=>openModal("go-lodging"),
+ dismiss:()=>setTimeout(()=>{state.modal=null;render()},0),
  "add-kind":x=>{const t=currentTrip(),k=x.dataset.kind,day=state.currentDayId||t.days[0]?.id;if(k==="Transporte"){state.modal={type:"journey",journeyId:"",ttype:"Avión",kind:"oneway",legs:[newLeg(dayDate(t,day))],status:"Reservado",locator:"",bookingUrl:"",estimated:0,spent:0,currency:t.currency,participants:[]};render()}else openModal("activity",{preset:k==="Alojamiento"?"stay":k,dayId:day})},
  "add-day":()=>openModal("day",{isNew:true}),
  "add-traveler":()=>openModal("traveler"),

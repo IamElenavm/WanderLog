@@ -39,7 +39,9 @@ Abre `http://localhost:8080`. La instalación y la caché requieren HTTPS o `loc
 
 ## Uso
 
-- **Botón ＋** (a la izquierda de «Info»): es el único punto para añadir cosas.
+- **Barra superior del viaje:** **＋** · **🛏️ Volver al alojamiento** · **⚙️ Ajustes**.
+- **🛏️ Volver al alojamiento** abre Google Maps con la ruta desde tu ubicación actual hasta la dirección del alojamiento del día: hoy si el viaje incluye la fecha actual (en la zona horaria del destino) o, si no, el día abierto en Horario. Si ese día hay dos alojamientos (salida y entrada), pregunta a cuál ir y pone primero el que corresponde a la hora actual. Si no hay alojamiento con dirección (por ejemplo, una noche en Casa), el botón no aparece.
+- **Botón ＋**: es el único punto para añadir cosas.
   - **Actividad:** Transporte, Alojamiento, Cultura, Gastronomía, Naturaleza u Otro.
   - **Otros:** Día, Persona, Seguro, Enlace, Tarea o Equipaje.
 - **Transporte:** abre un asistente con el tipo (✈️ Avión, ⛴️ Ferry, 🚆 Tren, 🚌 Autobús, 🚗 Coche, 🚕 Taxi, 🚇 Metro, 🚶 A pie) y el trayecto: solo ida, ida y vuelta, o varios tramos.
@@ -73,7 +75,7 @@ Reglas:
 - **Reservas**: actividades en estado `Pendiente` o `Reservado`.
 - **Estancia**: actividad de categoría `Alojamiento` cuyo fin cae en un día posterior al inicio. Aparece al final de cada día, desde el check-in hasta el día anterior al check-out.
 - **Presupuesto**: suma en euros todas las actividades, usando `rates`. Si falta el tipo de cambio de una moneda, Gastos lo avisa y esos importes no se suman. El reparto por persona es a partes iguales entre `participants`.
-- **Alojamiento activo**: el día de un check-out, antes de esa hora se usa el alojamiento de salida y después el de esa noche. Los botones «Volver al alojamiento» siguen esta regla.
+- **Alojamiento activo**: el día de un check-out, antes de esa hora se usa el alojamiento de salida y después el de esa noche. El botón «Volver al alojamiento» usa esta regla para ordenar las opciones.
 - **Tiempo**: previsión de [Open-Meteo](https://open-meteo.com/), sin clave y para uso no comercial, con el texto «Weather data by Open-Meteo». Se guarda en caché 3 horas.
 - **Documentos de Drive**: vista previa incrustada (`/preview`) y siempre el botón «Abrir en Drive». Si el documento no está compartido o el navegador bloquea las cookies de Google, la vista previa puede mostrar la pantalla de inicio de sesión.
 - **Calendario**: Ajustes → «📅 Exportar a calendario» genera un `.ics` con un evento por actividad. Las horas se convierten a UTC con la zona del viaje.
