@@ -2,6 +2,8 @@
 
 Aplicación estática de viajes, mobile-first, sin dependencias y compatible con GitHub Pages.
 
+**Versión actual:** 5.0.3 (caché `wanderlog-v5.0.3`) · modelo de datos 5.
+
 ## Publicar
 
 1. Sube el contenido de esta carpeta a la raíz de un repositorio.
@@ -53,7 +55,7 @@ Abre `http://localhost:8080`. La instalación y la caché requieren HTTPS o `loc
   - Si un tramo sale fuera de las fechas del viaje, la app ofrece ampliar el viaje.
   - «🧭 Editar trayecto completo» reabre todos los tramos a la vez.
 - **Info** muestra la cabecera del viaje y una cuadrícula de **mini apps**: Alojamientos, Reservas, Seguro de viaje, Equipaje, Tareas y recordatorios, Personas, Práctico, Enlaces y Gastos.
-  - Al pulsar una se abre en pantalla completa, con su propia dirección (`?vista=info&app=reservas`).
+  - Al pulsar una se abre en pantalla completa, con su propia dirección (por ejemplo, `?vista=info&app=reservations`).
   - El botón «Guardar en PDF» está al final de la cuadrícula.
 - **Reservas** se agrupan por categoría, en bloques plegables. La app recuerda cuáles están abiertos.
 - **Alojamiento de cada noche:** al final de cada día, si no hay alojamiento, «Añadir alojamiento» ofrece:

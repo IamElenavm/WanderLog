@@ -39,7 +39,7 @@ WanderLog es una aplicación web estática para planificar viajes: horario por d
 | Nuevo archivo que debe funcionar sin conexión | Añadirlo a `CORE` · `CACHE` |
 | Nueva librería o servicio externo | Consultarlo antes · CLAUDE.md («Qué es») · README.md |
 
-**Versiones (`X.Y.Z`):** `APP_VERSION` y `CACHE` (`wanderlog-vX.Y.Z`) llevan siempre el mismo número.
+**Versiones (`X.Y.Z`):** `APP_VERSION` (`core.js`), `CACHE` (`wanderlog-vX.Y.Z`, `sw.js`) y la «Versión actual» de CLAUDE.md y README.md llevan siempre el mismo número.
 - **Z**: correcciones.
 - **Y**: funciones nuevas compatibles.
 - **X**: cambio de modelo de datos (nuevo `schemaVersion`).
