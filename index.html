@@ -17,6 +17,15 @@
   <div id="toast-region" class="toast-region" aria-live="assertive"></div>
   <input id="json-import" type="file" accept="application/json,.json" hidden>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" defer></script>
-  <script src="assets/app.js" defer></script>
+  <!-- Orden importante: los scripts comparten el ámbito global y se ejecutan en este orden -->
+  <script src="assets/js/core.js" defer></script>
+  <script src="assets/js/model.js" defer></script>
+  <script src="assets/js/services.js" defer></script>
+  <script src="assets/js/info.js" defer></script>
+  <script src="assets/js/schedule.js" defer></script>
+  <script src="assets/js/forms.js" defer></script>
+  <script src="assets/js/io.js" defer></script>
+  <script src="assets/js/events.js" defer></script>
+  <script src="assets/js/main.js" defer></script>
 </body>
 </html>

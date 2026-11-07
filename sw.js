@@ -1,10 +1,18 @@
-const CACHE = "wanderlog-v4.0.0";
+const CACHE = "wanderlog-v5.0.0";
 const CORE = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./assets/styles.css",
-  "./assets/app.js",
+  "./assets/js/core.js",
+  "./assets/js/model.js",
+  "./assets/js/services.js",
+  "./assets/js/info.js",
+  "./assets/js/schedule.js",
+  "./assets/js/forms.js",
+  "./assets/js/io.js",
+  "./assets/js/events.js",
+  "./assets/js/main.js",
   "./assets/icons/icon.svg",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",

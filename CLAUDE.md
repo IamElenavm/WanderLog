@@ -9,17 +9,18 @@ WanderLog es una aplicación web estática para planificar viajes: horario por d
 - Librería externa: **Leaflet 1.9.4** (CSS y JS desde cdnjs), con teselas de OpenStreetMap.
 - Servicios externos, sin clave y solo con conexión: **Open-Meteo** (previsión, geocodificación de ciudades y zona horaria), **Nominatim** (direcciones para los mapas), **Google Maps** (solo enlaces) y **Google Drive** (solo vista previa `/preview`).
 - Interfaz y contenidos en español.
-- **Versión actual:** app `4.0.0` · caché `wanderlog-v4.0.0` · modelo de datos `4`.
+- **Versión actual:** app `5.0.0` · caché `wanderlog-v5.0.0` · modelo de datos `5`.
+- **Código:** nueve scripts en `assets/js/` (`core`, `model`, `services`, `info`, `schedule`, `forms`, `io`, `events`, `main`). Se cargan con `defer` en ese orden desde `index.html` y comparten el ámbito global; no hay `import`. `APP_VERSION` está en `core.js`.
 
-**Estructura de archivos, funciones de `app.js` y modelo de datos completo:** [docs/modelo-datos.md](docs/modelo-datos.md).
+**Estructura de archivos, funciones de cada script y modelo de datos completo:** [docs/modelo-datos.md](docs/modelo-datos.md).
 
 ## Reglas de trabajo
 
-1. **No tocar `assets/app.js` sin explicar antes qué se va a cambiar y por qué**, y esperar la confirmación del usuario. Lo mismo para cualquier refactorización o reformateo de ese archivo.
+1. **No tocar los scripts de `assets/js/` sin explicar antes qué se va a cambiar y por qué**, y esperar la confirmación del usuario. Lo mismo para cualquier refactorización o reformateo de esos archivos.
 2. Modificar solo los archivos que el usuario pida. Si un cambio necesita tocar otros, avisar antes.
 3. Mantener la app estática: sin build, sin npm y sin frameworks. Cualquier librería o servicio externo nuevo debe consultarse antes, y las librerías deben venir de un CDN con versión exacta.
 4. Respetar el estilo existente: código compacto, interfaz en español y diseño mobile-first.
-5. Al cambiar cualquier archivo de `CORE`, subir la versión de `CACHE` en `sw.js` y, a la vez, `APP_VERSION` en `app.js`, para que los usuarios reciban la actualización.
+5. Al cambiar cualquier archivo de `CORE`, subir la versión de `CACHE` en `sw.js` y, a la vez, `APP_VERSION` en `core.js`, para que los usuarios reciban la actualización. Si se añade, quita o renombra un script, actualizar también `index.html` (respetando el orden) y la lista `CORE`.
 6. No romper la compatibilidad de datos: los cambios en el modelo deben mantener la migración de `normalizeTrip()` y la importación de modelos anteriores. Si cambia el modelo, subir `schemaVersion` y actualizar README.md.
 7. No editar a mano los datos de viajes del usuario (`data/trips/*.json`) salvo que lo pida.
 8. No hacer commits ni push salvo que el usuario lo pida.
@@ -30,9 +31,9 @@ WanderLog es una aplicación web estática para planificar viajes: horario por d
 
 | Tipo de cambio | Archivos que hay que actualizar |
 |---|---|
-| Lógica o interfaz (`app.js`) | `app.js` · `APP_VERSION` en `app.js` · `CACHE` en `sw.js` (misma versión) · `docs/modelo-datos.md` si cambian funciones, bloques o reglas · CLAUDE.md si cambian las reglas o la versión actual · README.md si cambia lo que ve el usuario |
+| Lógica o interfaz (`assets/js/*.js`) | El script afectado · `APP_VERSION` en `core.js` · `CACHE` en `sw.js` (misma versión) · `docs/modelo-datos.md` si cambian funciones, bloques o reglas · CLAUDE.md si cambian las reglas o la versión actual · README.md si cambia lo que ve el usuario |
 | Estilos (`styles.css`) | `styles.css` · `APP_VERSION` + `CACHE` |
-| **Estructura de datos** | `app.js`: migración en `normalizeTrip`/`normalizeActivity` y, si aplica, `DIFF_FIELDS`/`compareTrips`, `budget` y `buildICS` · `schemaVersion` en `normalizeTrip` · `docs/modelo-datos.md` · README.md (Modelo de datos y Migración) · CLAUDE.md (versión actual) · `APP_VERSION` + `CACHE` · `data/trips/*.json` solo si el usuario lo pide |
+| **Estructura de datos** | `model.js`: migración en `normalizeTrip`/`normalizeActivity` y, si aplica, `budget` · `io.js`: `DIFF_FIELDS`/`compareTrips` y `buildICS` · `schemaVersion` en `normalizeTrip` · `docs/modelo-datos.md` · README.md (Modelo de datos y Migración) · CLAUDE.md (versión actual) · `APP_VERSION` + `CACHE` · `data/trips/*.json` solo si el usuario lo pide |
 | Datos de un viaje publicado | `data/trips/<viaje>.json` (subir `publishedVersion`) · `catalog.json` (`updatedAt`, y nombre o fechas si cambian) · `CACHE` |
 | Nuevo viaje publicado | Crear `data/trips/<viaje>.json` siguiendo `atenas-egina.json` · añadirlo a `catalog.json` · añadirlo a `CORE` · `CACHE` + `APP_VERSION` |
 | Nuevo archivo que debe funcionar sin conexión | Añadirlo a `CORE` · `CACHE` |
@@ -54,7 +55,7 @@ python -m http.server 8080
 Abrir `http://localhost:8080`. Si los cambios no aparecen, puede ser la caché del Service Worker: recargar sin caché o anular el registro del SW en DevTools → Application.
 
 **Comprobaciones mínimas tras un cambio:**
-- La sintaxis de `app.js` es correcta: la app se pinta.
+- La sintaxis de los nueve scripts es correcta: la app se pinta.
 - Un viaje guardado con el modelo anterior se migra sin errores.
 - El presupuesto del viaje publicado no cambia si no debía cambiar.
 - Info, Horario, formularios, importación y exportación siguen funcionando.
