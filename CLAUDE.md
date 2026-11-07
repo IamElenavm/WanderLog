@@ -33,18 +33,24 @@ WanderLog/
 
 - **index.html**: página casi vacía. Contiene `#app` (donde JS renderiza toda la interfaz), `#toast-region` (avisos) y un `<input type="file" id="json-import">` oculto para importar. Carga Leaflet y `assets/app.js` con `defer`.
 - **assets/app.js**: código compacto (una función por línea, muy denso). Bloques principales:
-  - Arranque y datos: `init()`, `loadTrips()` (lee `catalog.json` y cada viaje) y `normalizeTrip()` (migra modelos antiguos).
+  - Arranque y datos: `init()`, `loadTrips()` (lee `catalog.json` y cada viaje) y `normalizeTrip()`. Esta última migra modelos antiguos con `migrateBookings()`/`mergeBooking()` y normaliza cada actividad con `normalizeActivity()`.
+  - Modelo 3: auxiliares `isStay`, `stays`, `stayForDay` (alojamiento de cada noche), `isBooking`, `legView` y `dayEntries` (tramos de ida y vuelta en el horario).
   - Enrutado por hash: `#viaje/<id>` (`applyRoute`).
   - Renderizado con plantillas de texto: `render()` reconstruye `#app` entero. Funciones `renderHome`, `renderTrip`, `renderInfo`, `renderSchedule`, `renderActivity`, `renderBudgetBody`, etc.
   - Mapas: `scheduleLeafletMaps`, `initMiniLeafletMap`, `initRouteLeafletMap`. `geocodePlace` usa una cola y guarda los resultados en `localStorage` (`wanderlog.geo.*`).
-  - Modales de edición: viaje, día, actividad, alojamiento, reserva, notas prácticas, enlaces y ajustes.
+  - Modales de edición: viaje, día, actividad (que sirve también para reservas, alojamientos y transportes con vuelta, con campos que se muestran u ocultan según la categoría mediante `updateActivityForm`), notas prácticas, enlaces y ajustes.
   - Eventos delegados: `handleClick`, `handleChange` y `handleSubmit`, que se basan en `data-action` y `data-form`.
   - Persistencia: guardado automático en `localStorage`, que tiene prioridad sobre el JSON publicado. Importación y exportación en JSON.
-  - Presupuesto: se calcula a partir de actividades, alojamientos y reservas. Si un elemento está vinculado a una reserva, solo cuenta la reserva.
+  - Presupuesto: suma las actividades sin `linkedTo` («Incluida en»).
 - **assets/styles.css**: todos los estilos, en formato compacto.
 - **sw.js**: caché `wanderlog-vX.Y.Z` con la lista `CORE`. Sirve primero desde la caché y actualiza en segundo plano. Al activarse borra las cachés antiguas. Solo intercepta GET del mismo origen.
 - **data/catalog.json**: `schemaVersion`, `updatedAt` y la lista `trips` (`id`, `file`, `name`, `destination`, `startDate`, `endDate`, `icon`).
-- **data/trips/*.json**: modelo de datos v2 (`schemaVersion: 2`, `publishedVersion`). Contiene `days`, `activities`, `accommodations`, `reservations`, `practical` (siete bloques) y `links`.
+- **data/trips/*.json**: modelo de datos v3 (`schemaVersion: 3`, `publishedVersion`). Contiene `days`, `activities`, `practical` (siete bloques) y `links`. Ya no hay `reservations` ni `accommodations`: todo es una actividad.
+  - Una reserva es una actividad en estado `Pendiente` o `Reservado`.
+  - Un alojamiento es una actividad de categoría `Alojamiento` cuyo fin (`endDate`) cae en un día posterior al inicio.
+  - Un transporte puede tener `returnTrip` (vuelta).
+  - `linkedTo` marca las actividades que cubre la reserva de otra.
+  - El detalle de todos los campos está en el README.
 
 ## Cómo probar en local
 
