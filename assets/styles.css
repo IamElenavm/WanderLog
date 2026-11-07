@@ -37,3 +37,4 @@
 /* v5.0.2: ＋ y «Volver al alojamiento» en la barra superior */
 .topbar-add{background:var(--brand)!important;border-color:var(--brand)!important;color:#fff!important;font-size:1.15rem;font-weight:800}a.icon-btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:var(--text)}
 .night-options a{display:grid;grid-template-columns:auto 1fr;column-gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--text);font-weight:750;font-size:.8rem;text-decoration:none}.night-options a span{grid-row:span 2;font-size:1.3rem}
+.night-options a.active{border-color:var(--brand);background:#e9f4f0}
